@@ -1,8 +1,8 @@
 {
-    "1074340840681517117": {
-        "logChannelId": "1314881685560623135",
-        "logChannelMessageSendId": "1374645318041473045",
-        "logChannelMessageDeleteId": "1374638008527224954",
-        "logChannelMessageEditId": "1374638008527224954"
+    "id_guild_example": {
+        "logChannelId": "1234567890987645",
+        "logChannelMessageSendId": "1234567890987645",
+        "logChannelMessageDeleteId": "1234567890987645",
+        "logChannelMessageEditId": "1234567890987645"
     }
 }
