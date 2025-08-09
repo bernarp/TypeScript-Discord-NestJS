@@ -46,7 +46,7 @@ export class HealthModuleCommand implements ICommand {
     public async execute(interaction: CommandInteraction): Promise<void> {
         await interaction.deferReply({ ephemeral: true });
         this._eventEmitter.emit(
-            AppEvents.INTERACTION_CREATED,
+            AppEvents.INTERACTION_CREATED_COMMAND,
             new InteractionCreateEvent(interaction)
         );
 
@@ -57,7 +57,7 @@ export class HealthModuleCommand implements ICommand {
             healthInfo,
             systemStatus,
             interaction.user,
-            interaction.guild // Передаем гильдию для контекста
+            interaction.guild
         );
 
         await interaction.editReply({ embeds: [embed] });
@@ -138,7 +138,7 @@ export class HealthModuleCommand implements ICommand {
             description: `Общий статус: **${systemStatus.status.toUpperCase()}**`,
             color: color,
             fields: fields,
-            context: { user, guild }, // Передаем полный контекст
+            context: { user, guild }, 
         };
 
         return this._embedFactory.create(embedOptions);

@@ -9,16 +9,19 @@ import { CoreModule } from "@/core.module";
 import { ExampleModule } from "@modules.DiscordClient/example/example.module";
 import { HandlersModule as registerModule } from "./handlers.Global/handlers.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
-import { LoggingUserCreateInteractionsGuildModule } from "@modules.DiscordClient/logging.UserInteractionsGuild/logging.user-interactions.module";
+import { LoggingUserInteractionsGuildModule } from "@modules.DiscordClient/logging.UserInteractionsGuild/logging.user-interactions.module";
+import { TicketGuildsystemModule } from "@modules.DiscordClient/ticket.GuildSystem/ticket.guildsystem.module";
+import { GuildConfigModule } from "./modules/module.GuildConfigManager/config.guild-config-manager.module";
 
 @Module({
     imports: [
         CoreModule,
         registerModule.register({
-            imports: [ExampleModule],
+            imports: [ExampleModule, GuildConfigModule],
         }),
         EventEmitterModule.forRoot(),
-        LoggingUserCreateInteractionsGuildModule,
+        LoggingUserInteractionsGuildModule,
+        TicketGuildsystemModule,
     ],
     controllers: [],
     providers: [

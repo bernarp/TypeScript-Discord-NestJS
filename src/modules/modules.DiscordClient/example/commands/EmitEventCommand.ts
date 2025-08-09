@@ -31,7 +31,7 @@ export class EmitEventCommand implements ICommand {
      */
     public async execute(interaction: CommandInteraction): Promise<void> {
         this._eventEmitter.emit(
-            AppEvents.INTERACTION_CREATED,
+            AppEvents.INTERACTION_CREATED_COMMAND,
             new InteractionCreateEvent(interaction)
         );
 

@@ -8,6 +8,7 @@ import { ConfigManager } from "@core/ConfigManager";
 import { Client } from "@core/Client";
 import { EmbedFactory } from "./utils.Global/EmbedFactory";
 import { ErrorLoggerService } from "@err/services/ErrorLoggerService";
+import { GuildConfigManager } from "./core.DiscordClient/GuildConfigManager";
 
 @Global()
 @Module({
@@ -24,8 +25,18 @@ import { ErrorLoggerService } from "@err/services/ErrorLoggerService";
             provide: "IEmbedFactory",
             useClass: EmbedFactory,
         },
+        {
+            provide: "IGuildConfig",
+            useClass: GuildConfigManager,
+        },
         ErrorLoggerService,
     ],
-    exports: ["IConfig", "IClient", "IEmbedFactory", ErrorLoggerService],
+    exports: [
+        "IConfig",
+        "IClient",
+        "IEmbedFactory",
+        ErrorLoggerService,
+        "IGuildConfig",
+    ],
 })
 export class CoreModule {}

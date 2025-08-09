@@ -15,7 +15,7 @@ export const AppEvents = {
      * @description Срабатывает, когда пользователь выполняет любую слеш-команду.
      * @payload {InteractionCreateEvent}
      */
-    INTERACTION_CREATED: "interaction.created",
+    INTERACTION_CREATED_COMMAND: "interaction.created.command",
 
     // --- События, связанные с тикетами (пример на будущее) ---
     /**

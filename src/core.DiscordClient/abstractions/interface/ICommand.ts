@@ -1,29 +1,32 @@
-import { CommandInteraction, _Omit, SlashCommandBuilder } from "discord.js";
-
 /**
- * @interface ICommand
+ * @file ICommand.ts
  * @description Определяет структуру для всех слеш-команд бота.
- * Каждая команда должна реализовывать этот интерфейс, чтобы быть корректно
- * зарегистрированной и обработанной.
+ * ВЕРСИЯ 2.0: Добавлена поддержка команд с подкомандами.
  */
+import {
+    CommandInteraction,
+    SlashCommandBuilder,
+    SlashCommandSubcommandsOnlyBuilder, // Импортируем тип для билдера с подкомандами
+} from "discord.js";
+
 export interface ICommand {
     /**
      * @property data
-     * @description Конфигурация команды, созданная с помощью SlashCommandBuilder.
-     * Содержит имя, описание, параметры и другие метаданные команды.
-     * Используется Omit для исключения методов построения подкоманд,
-     * так как на этом уровне ожидается уже сконфигурированный объект.
+     * @description Конфигурация команды.
+     * ИЗМЕНЕНИЕ: Теперь `data` может быть одним из двух типов:
+     * 1. Обычный SlashCommandBuilder (без подкоманд).
+     * 2. SlashCommandSubcommandsOnlyBuilder (когда вы используете .addSubcommand()).
+     * Это делает интерфейс универсальным для всех видов команд.
      */
-    readonly data: Omit<
-        SlashCommandBuilder,
-        "addSubcommand" | "addSubcommandGroup"
-    >;
+    readonly data:
+        | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">
+        | SlashCommandSubcommandsOnlyBuilder;
 
     /**
      * @method execute
      * @description Основная логика команды, которая выполняется при ее вызове пользователем.
      * @param {CommandInteraction} interaction - Объект взаимодействия, содержащий всю информацию о вызове команды.
-     * @returns {Promise<void>} Promise, который разрешается после завершения выполнения команды.
+     * @returns {Promise<void>}
      */
     execute(interaction: CommandInteraction): Promise<void>;
 }

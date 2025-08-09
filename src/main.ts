@@ -12,24 +12,24 @@ import { ErrorLoggerService } from "@err/services/ErrorLoggerService";
 import { appErrorHandler } from "@err/appErrorHandler";
 
 async function bootstrap() {
-    const logger = new Logger("Bootstrap");
+    const l = new Logger("Bootstrap");
     try {
-        const app = await NestFactory.create(AppModule, {
+        const ns = await NestFactory.create(AppModule, {
             logger: ["log", "error", "warn", "debug", "verbose"],
         });
 
-        const embedFactory = app.get<IEmbedFactory>("IEmbedFactory");
-        const errorLogger = app.get(ErrorLoggerService);
+        const emdf = ns.get<IEmbedFactory>("IEmbedFactory");
+        const erlog = ns.get(ErrorLoggerService);
 
-        app.useGlobalFilters(new appErrorHandler(embedFactory, errorLogger));
+        ns.useGlobalFilters(new appErrorHandler(emdf, erlog));
 
-        app.enableShutdownHooks();
-        await app.init();
-        const client = app.get<IClient>("IClient");
-        await client.start();
-        logger.log("Application successfully started.");
+        ns.enableShutdownHooks();
+        await ns.init();
+        const cl = ns.get<IClient>("IClient");
+        await cl.start();
+        l.log("Application successfully started.");
     } catch (error) {
-        logger.error(
+        l.error(
             "A critical error occurred during application startup:",
             error
         );

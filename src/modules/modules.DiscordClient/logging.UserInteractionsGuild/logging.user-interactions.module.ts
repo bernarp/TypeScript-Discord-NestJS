@@ -1,10 +1,10 @@
 import { CoreModule } from "@/core.module";
 import { Module } from "@nestjs/common";
-import { InteractionLoggerService } from "./services/InteractionLoggerService";
+import { InteractionLoggerCommandService } from "./services/InteractionLoggerCommandService";
 
 @Module({
     imports: [CoreModule],
-    providers: [InteractionLoggerService],
+    providers: [InteractionLoggerCommandService],
     exports: [],
 })
-export class LoggingUserCreateInteractionsGuildModule {}
+export class LoggingUserInteractionsGuildModule {}
