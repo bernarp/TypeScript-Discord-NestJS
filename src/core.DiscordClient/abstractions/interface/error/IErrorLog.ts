@@ -1,4 +1,4 @@
-export interface ErrorLog {
+export interface IErrorLog {
     errorId: string;
     timestamp: string;
     command: {

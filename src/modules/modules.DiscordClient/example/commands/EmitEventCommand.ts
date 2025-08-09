@@ -10,6 +10,7 @@ import { Command } from "@decorators/command.decorator";
 import { ICommand } from "@interface/ICommand";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { InteractionCreateEvent } from "@event.EventBus/interaction-create.event";
+import { AppEvents } from "@/event.EventBus/app.events";
 
 @Command()
 @Injectable()
@@ -30,7 +31,7 @@ export class EmitEventCommand implements ICommand {
      */
     public async execute(interaction: CommandInteraction): Promise<void> {
         this._eventEmitter.emit(
-            "interaction.created",
+            AppEvents.INTERACTION_CREATED,
             new InteractionCreateEvent(interaction)
         );
 

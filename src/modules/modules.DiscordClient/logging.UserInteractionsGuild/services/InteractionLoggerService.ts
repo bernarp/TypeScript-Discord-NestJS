@@ -11,6 +11,7 @@ import { IClient } from "@interface/IClient";
 import { IConfig } from "@interface/IConfig";
 import { TextChannel, ChannelType } from "discord.js";
 import { Service } from "@core/abstractions/Service";
+import { AppEvents } from "@/event.EventBus/app.events";
 
 @Injectable()
 export class InteractionLoggerService extends Service {
@@ -32,7 +33,7 @@ export class InteractionLoggerService extends Service {
      * @description Этот метод автоматически вызывается, когда происходит событие 'interaction.created'.
      * @param {InteractionCreateEvent} payload - Данные события.
      */
-    @OnEvent("interaction.created")
+    @OnEvent(AppEvents.INTERACTION_CREATED)
     async onInteractionCreated(payload: InteractionCreateEvent): Promise<void> {
         const { interaction } = payload;
         const { user, channel, commandName, guild, commandId, channelId } =

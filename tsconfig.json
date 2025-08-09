@@ -42,6 +42,7 @@
             "@decorators/*": ["src/decorators.NestJS/*"],
             "@modules.DiscordClient/*": ["src/modules/modules.DiscordClient/*"],
             "@modules.GoogleSheets/*": ["src/modules/modules.GoogleSheets/*"],
+            "@module/*": ["src/modules/*"],
             "@mappers.PrismaDatabase/*": [
                 "src/core.DiscordClient/domain/mappers.PrismaDatabase"
             ],
@@ -49,7 +50,8 @@
                 "src/core.DiscordClient/domain/entities.PrismaDatabase/*"
             ],
             "@utils.Global/*": ["src/utils.Global/*"],
-            "@event.EventBus/*": ["src/event.EventBus/*"]
+            "@event.EventBus/*": ["src/event.EventBus/*"],
+            "@err/*": ["src/core.DiscordClient/error.HandlerFilter/*"]
         }
     },
     // "include" - массив путей, которые должны быть включены в компиляцию.

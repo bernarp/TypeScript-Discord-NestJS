@@ -7,7 +7,7 @@ import { CommandInteraction } from "discord.js";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { ErrorLog } from "@interface/error/IErrorLog";
+import { IErrorLog } from "@interface/error/IErrorLog";
 
 /**
  * @interface ErrorLog
@@ -35,7 +35,7 @@ export class ErrorLoggerService {
         interaction: CommandInteraction
     ): Promise<string> {
         const errorId = uuidv4();
-        const logData: ErrorLog = {
+        const logData: IErrorLog = {
             errorId,
             timestamp: new Date().toISOString(),
             command: {
