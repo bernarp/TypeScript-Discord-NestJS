@@ -1,0 +1,58 @@
+// tsconfig.json
+{
+    // "compilerOptions" - это основной раздел, где настраивается поведение компилятора TypeScript.
+    "compilerOptions": {
+        /*
+         * Basic Options
+         */
+        "module": "commonjs", // Указывает систему модулей. 'commonjs' - стандарт для Node.js.
+        "declaration": true, // Генерировать соответствующие файлы деклараций '.d.ts' для каждого '.ts' файла. Это полезно для библиотек.
+        "removeComments": true, // Удалять все комментарии из итоговых JavaScript файлов.
+        "emitDecoratorMetadata": true, // Обязательная опция для NestJS. Включает эмиссию метаданных о типах для полей и методов, украшенных декораторами.
+        "experimentalDecorators": true, // Обязательная опция для NestJS. Включает поддержку экспериментальных декораторов, которые являются основой фреймворка.
+        "allowSyntheticDefaultImports": true, // Позволяет использовать синтаксис `import React from "react"` вместо `import * as React from "react"`. Улучшает совместимость.
+        "target": "ES2021", // Версия JavaScript, в которую будет скомпилирован код. ES2021 - хороший современный стандарт, поддерживаемый актуальными версиями Node.js.
+        "sourceMap": true, // Генерировать файлы '.js.map', которые позволяют отлаживать исходный TypeScript код в браузере или среде выполнения.
+        "outDir": "./dist", // Директория, в которую будут помещены скомпилированные JavaScript файлы. Соответствует вашему package.json.
+        "baseUrl": "./", // Базовый URL для разрешения не-относительных импортов.
+        "incremental": true, // Включает инкрементальную компиляцию, что значительно ускоряет последующие сборки проекта.
+        "skipLibCheck": true, // Пропускать проверку типов во всех файлах деклараций (*.d.ts). Ускоряет компиляцию.
+
+        /*
+         * Strict Type-Checking Options (Опции строгой проверки типов)
+         * Включение этих опций делает код более надежным и помогает избежать множества распространенных ошибок.
+         */
+        "strictNullChecks": false, // Если true, null и undefined не могут быть присвоены переменным других типов. NestJS генератор ставит false, но рекомендуется true для новых проектов.
+        "noImplicitAny": false, // Если true, вызывает ошибку при наличии переменных или параметров с неявным типом 'any'. Рекомендуется установить в true.
+        "strictBindCallApply": false, // Включает более строгую проверку методов .bind, .call, и .apply.
+        "forceConsistentCasingInFileNames": false, // Запрещает импортировать файлы с некорректным регистром символов в пути.
+        "noFallthroughCasesInSwitch": false, // Сообщает об ошибках в конструкциях switch, где один case "проваливается" в другой без break или return.
+
+        /*
+         * Module Resolution Options (Настройка разрешения модулей)
+         * Эти опции позволяют использовать "чистые" импорты вместо относительных путей вроде '../../'.
+         */
+        "paths": {
+            // TODO: Можно добавить больше псевдонимов для модулей по мере роста проекта.
+            // Например: "@users/*": ["src/users/*"]
+            "@/*": ["src/*"],
+            "@interface/*": ["src/core.DiscordClient/abstractions/interface/*"],
+            "@handlers.Global/*": ["src/handlers.Global/*"],
+            "@core/*": ["src/core.DiscordClient/*"],
+            "@decorators/*": ["src/decorators.NestJS/*"],
+            "@modules.DiscordClient/*": ["src/modules/modules.DiscordClient/*"],
+            "@modules.GoogleSheets/*": ["src/modules/modules.GoogleSheets/*"],
+            "@mappers.PrismaDatabase/*": [
+                "src/core.DiscordClient/domain/mappers.PrismaDatabase"
+            ],
+            "@entities.PrismaDatabase/*": [
+                "src/core.DiscordClient/domain/entities.PrismaDatabase/*"
+            ],
+            "@utils.Global/*": ["src/utils.Global/*"],
+            "@event.EventBus/*": ["src/event.EventBus/*"]
+        }
+    },
+    // "include" - массив путей, которые должны быть включены в компиляцию.
+    // В данном случае, это все файлы в директории 'src'.
+    "include": ["src/**/*"]
+}

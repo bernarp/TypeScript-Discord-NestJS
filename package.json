@@ -1,0 +1,37 @@
+{
+    "name": "discordbot4",
+    "version": "1.0.0",
+    "main": "dist/main.js",
+    "scripts": {
+        "build": "rimraf dist && nest build",
+        "start": "node dist/main.js",
+        "start:dev": "nest start --watch",
+        "docs:generate": "compodoc -p tsconfig.json -n \"Discord Bot Documentation\" -d ./documentation",
+        "docs:serve": "compodoc -p tsconfig.json -s -n \"Discord Bot Documentation\" -d ./documentation",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "dependencies": {
+        "@nestjs/common": "^11.1.6",
+        "@nestjs/core": "^11.1.6",
+        "@nestjs/event-emitter": "^3.0.1",
+        "@nestjs/platform-express": "^11.1.6",
+        "discord.js": "^14.21.0",
+        "dotenv": "^17.2.1",
+        "reflect-metadata": "^0.2.2"
+    },
+    "devDependencies": {
+        "@compodoc/compodoc": "^1.1.26",
+        "@nestjs/cli": "^11.0.10",
+        "@nestjs/schematics": "^11.0.7",
+        "@swc/cli": "^0.7.8",
+        "@swc/core": "^1.13.3",
+        "@types/node": "^24.2.1",
+        "rimraf": "^6.0.1",
+        "tsconfig-paths": "^4.2.0",
+        "typescript": "^5.9.2"
+    }
+}
