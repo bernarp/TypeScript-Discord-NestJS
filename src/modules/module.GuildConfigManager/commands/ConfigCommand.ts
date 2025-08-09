@@ -16,9 +16,6 @@ import { Command } from "@decorators/command.decorator";
 import { ICommand } from "@interface/ICommand";
 import { IGuildConfig } from "@interface/IGuildConfig";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
-import { AppEvents } from "@/event.EventBus/app.events";
-import { InteractionCreateEvent } from "@/event.EventBus/interaction-create.event";
-import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Command()
 @Injectable()
@@ -62,16 +59,12 @@ export class ConfigCommand implements ICommand {
     constructor(
         @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig,
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
-        private readonly _eventEmitter: EventEmitter2
+
     ) {}
 
     public async execute(interaction: CommandInteraction): Promise<void> {
         if (!interaction.isChatInputCommand()) return;
-        
-        this._eventEmitter.emit(
-            AppEvents.INTERACTION_CREATED_COMMAND,
-            new InteractionCreateEvent(interaction)
-        );
+
 
         const subcommand = interaction.options.getSubcommand();
 

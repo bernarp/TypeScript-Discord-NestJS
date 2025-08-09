@@ -15,11 +15,11 @@ import { GuildConfigModule } from "./modules/module.GuildConfigManager/config.gu
 
 @Module({
     imports: [
+        EventEmitterModule.forRoot(),
         CoreModule,
         registerModule.register({
             imports: [ExampleModule, GuildConfigModule],
         }),
-        EventEmitterModule.forRoot(),
         LoggingUserInteractionsGuildModule,
         TicketGuildsystemModule,
     ],

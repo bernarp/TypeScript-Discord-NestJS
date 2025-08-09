@@ -9,6 +9,7 @@ import { Client } from "@core/Client";
 import { EmbedFactory } from "./utils.Global/EmbedFactory";
 import { ErrorLoggerService } from "@err/services/ErrorLoggerService";
 import { GuildConfigManager } from "./core.DiscordClient/GuildConfigManager";
+import { APP_INTERCEPTOR } from "@nestjs/core";
 
 @Global()
 @Module({

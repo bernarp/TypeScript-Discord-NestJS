@@ -14,25 +14,23 @@ import { appErrorHandler } from "@err/appErrorHandler";
 async function bootstrap() {
     const l = new Logger("Bootstrap");
     try {
-        const ns = await NestFactory.create(AppModule, {
+        const NestJS = await NestFactory.create(AppModule, {
             logger: ["log", "error", "warn", "debug", "verbose"],
         });
 
-        const emdf = ns.get<IEmbedFactory>("IEmbedFactory");
-        const erlog = ns.get(ErrorLoggerService);
+        const emdf = NestJS.get<IEmbedFactory>("IEmbedFactory");
+        const erlog = NestJS.get(ErrorLoggerService);
 
-        ns.useGlobalFilters(new appErrorHandler(emdf, erlog));
+        NestJS.useGlobalFilters(new appErrorHandler(emdf, erlog));
+        
 
-        ns.enableShutdownHooks();
-        await ns.init();
-        const cl = ns.get<IClient>("IClient");
+        NestJS.enableShutdownHooks();
+        await NestJS.init();
+        const cl = NestJS.get<IClient>("IClient");
         await cl.start();
         l.log("Application successfully started.");
     } catch (error) {
-        l.error(
-            "A critical error occurred during application startup:",
-            error
-        );
+        l.error("A critical error occurred during application startup:", error);
         process.exit(1);
     }
 }

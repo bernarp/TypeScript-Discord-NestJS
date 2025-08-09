@@ -22,8 +22,7 @@ import {
     CustomEmbedOptions,
 } from "@interface/utils/IEmbedFactory";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { InteractionCreateEvent } from "@/event.EventBus/interaction-create.event";
-import { AppEvents } from "@/event.EventBus/app.events";
+
 
 @Command()
 @Injectable()
@@ -45,10 +44,6 @@ export class HealthModuleCommand implements ICommand {
      */
     public async execute(interaction: CommandInteraction): Promise<void> {
         await interaction.deferReply({ ephemeral: true });
-        this._eventEmitter.emit(
-            AppEvents.INTERACTION_CREATED_COMMAND,
-            new InteractionCreateEvent(interaction)
-        );
 
         const healthInfo = await this._exampleService.getHealthInfo();
         const systemStatus = await this._exampleService.checkSystemStatus();

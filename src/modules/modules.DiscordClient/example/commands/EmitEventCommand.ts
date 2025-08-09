@@ -1,16 +1,18 @@
 /**
  * @file EmitEventCommand.ts
  * @description Команда, которая генерирует событие для демонстрации работы Шины Событий.
- * ВЕРСИЯ 2.0: Упрощена за счет использования глобального Exception Filter.
+ * ВЕРСИЯ 4.0: Использует универсальный декоратор @EmitEvent.
  */
 import { Inject, Injectable } from "@nestjs/common";
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
-import { EventEmitter2 } from "@nestjs/event-emitter";
+import {
+    CommandInteraction,
+    SlashCommandBuilder,
+    ChatInputCommandInteraction,
+} from "discord.js";
 import { Command } from "@decorators/command.decorator";
 import { ICommand } from "@interface/ICommand";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
-import { InteractionCreateEvent } from "@event.EventBus/interaction-create.event";
-import { AppEvents } from "@/event.EventBus/app.events";
+
 
 @Command()
 @Injectable()
@@ -22,22 +24,16 @@ export class EmitEventCommand implements ICommand {
         );
 
     public constructor(
-        @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
-        private readonly _eventEmitter: EventEmitter2
+        @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory
     ) {}
 
-    /**
-     * @method execute
-     */
     public async execute(interaction: CommandInteraction): Promise<void> {
-        this._eventEmitter.emit(
-            AppEvents.INTERACTION_CREATED_COMMAND,
-            new InteractionCreateEvent(interaction)
-        );
-
+        if (!interaction.isChatInputCommand()) return;
+        
+        
         const successEmbed = this._embedFactory.createSuccessEmbed({
             description:
-                "Событие `interaction.created` было успешно сгенерировано!",
+                "Событие `interaction.created` было успешно сгенерировано универсальным перехватчиком!",
             context: { user: interaction.user, guild: interaction.guild },
         });
 
