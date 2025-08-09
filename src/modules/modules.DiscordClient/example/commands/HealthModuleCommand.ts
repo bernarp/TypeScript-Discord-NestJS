@@ -1,7 +1,7 @@
 /**
  * @file HealthModuleCommand.ts
  * @description Команда для получения информации о состоянии модуля и системы.
- * ВЕРСИЯ 3.0: Переработана для использования кастомного create в EmbedFactory с контекстом.
+ * ВЕРСИЯ 4.0: Упрощена за счет использования глобального Exception Filter.
  */
 
 import { Inject, Injectable } from "@nestjs/common";
@@ -29,54 +29,37 @@ export class HealthModuleCommand implements ICommand {
         .setName("health-module")
         .setDescription("Показывает информацию о состоянии системы и модуля");
 
-    /**
-     * @constructor
-     * @param _exampleService - Сервис для получения данных о системе.
-     * @param _embedFactory - Фабрика для создания стандартизированных эмбедов.
-     */
     public constructor(
         private readonly _exampleService: ExampleService,
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory
     ) {}
 
+    /**
+     * @method execute
+     * @description ИЗМЕНЕНИЕ: Блок try...catch был удален. Вся обработка ошибок
+     * теперь делегирована глобальному DiscordExceptionFilter.
+     */
     public async execute(interaction: CommandInteraction): Promise<void> {
-        try {
-            await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ ephemeral: true });
 
-            const healthInfo = await this._exampleService.getHealthInfo();
-            const systemStatus = await this._exampleService.checkSystemStatus();
+        const healthInfo = await this._exampleService.getHealthInfo();
+        const systemStatus = await this._exampleService.checkSystemStatus();
 
-            const embed = this._buildHealthEmbed(
-                healthInfo,
-                systemStatus,
-                interaction.user
-            );
+        const embed = this._buildHealthEmbed(
+            healthInfo,
+            systemStatus,
+            interaction.user,
+            interaction.guild // Передаем гильдию для контекста
+        );
 
-            await interaction.editReply({ embeds: [embed] });
-        } catch (error) {
-            const errorEmbed = this._embedFactory.createErrorEmbed({
-                description:
-                    "Не удалось получить информацию о состоянии системы.",
-                context: { user: interaction.user },
-            });
-            await interaction.editReply({ embeds: [errorEmbed] });
-        }
+        await interaction.editReply({ embeds: [embed] });
     }
 
-    /**
-     * @private
-     * @method _buildHealthEmbed
-     * @description Собирает данные и использует EmbedFactory для создания финального эмбеда с контекстом.
-     * @param {HealthInfo} healthInfo - Информация о здоровье системы.
-     * @param {{status: string, issues: string[]}} systemStatus - Статус системы.
-     * @param {User} user - Пользователь, вызвавший команду.
-     * @param {(Guild | null)} guild - Гильдия, в которой вызвана команда.
-     * @returns {EmbedBuilder} Готовый эмбед.
-     */
     private _buildHealthEmbed(
         healthInfo: HealthInfo,
         systemStatus: { status: string; issues: string[] },
-        user: User
+        user: User,
+        guild: Guild | null
     ): EmbedBuilder {
         let color: number;
         let statusEmoji: string;
@@ -141,24 +124,18 @@ export class HealthModuleCommand implements ICommand {
                 inline: false,
             });
         }
+
         const embedOptions: CustomEmbedOptions = {
             title: `${statusEmoji} Состояние системы`,
             description: `Общий статус: **${systemStatus.status.toUpperCase()}**`,
             color: color,
             fields: fields,
-            context: { user }, 
+            context: { user, guild }, // Передаем полный контекст
         };
 
         return this._embedFactory.create(embedOptions);
     }
 
-    /**
-     * @private
-     * @method _getMemoryBar
-     * @description Создает визуальную полосу использования памяти.
-     * @param {number} percentage - Процент использования памяти.
-     * @returns {string} Визуальная полоса.
-     */
     private _getMemoryBar(percentage: number): string {
         const barLength = 10;
         const filledLength = Math.round((percentage / 100) * barLength);
@@ -170,4 +147,3 @@ export class HealthModuleCommand implements ICommand {
         return `${bar} ${percentage}%`;
     }
 }
-

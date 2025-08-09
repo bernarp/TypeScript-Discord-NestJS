@@ -9,7 +9,7 @@ import { CoreModule } from "@/core.module";
 import { ExampleModule } from "@modules.DiscordClient/example/example.module";
 import { HandlersModule as registerModule } from "./handlers.Global/handlers.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
-import { LoggingUserCreateInteractionsGuildModule } from "./modules/modules.DiscordClient/logging.UserCreateInteractionsGuild/logging.user.create-interactions.module";
+import { LoggingUserCreateInteractionsGuildModule } from "@modules.DiscordClient/logging.UserInteractionsGuild/logging.user-interactions.module";
 
 @Module({
     imports: [

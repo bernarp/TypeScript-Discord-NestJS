@@ -7,6 +7,7 @@ import { Global, Module } from "@nestjs/common";
 import { ConfigManager } from "@core/ConfigManager";
 import { Client } from "@core/Client";
 import { EmbedFactory } from "./utils.Global/EmbedFactory";
+import { ErrorLoggerService } from "@err/services/ErrorLoggerService";
 
 @Global()
 @Module({
@@ -23,7 +24,8 @@ import { EmbedFactory } from "./utils.Global/EmbedFactory";
             provide: "IEmbedFactory",
             useClass: EmbedFactory,
         },
+        ErrorLoggerService,
     ],
-    exports: ["IConfig", "IClient", "IEmbedFactory"],
+    exports: ["IConfig", "IClient", "IEmbedFactory", ErrorLoggerService],
 })
 export class CoreModule {}

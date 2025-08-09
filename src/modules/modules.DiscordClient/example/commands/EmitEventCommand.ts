@@ -1,6 +1,7 @@
 /**
  * @file EmitEventCommand.ts
  * @description Команда, которая генерирует событие для демонстрации работы Шины Событий.
+ * ВЕРСИЯ 2.0: Упрощена за счет использования глобального Exception Filter.
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { CommandInteraction, SlashCommandBuilder } from "discord.js";
@@ -14,23 +15,20 @@ import { InteractionCreateEvent } from "@event.EventBus/interaction-create.event
 @Injectable()
 export class EmitEventCommand implements ICommand {
     public readonly data = new SlashCommandBuilder()
-        .setName("emit-event-tests")
+        .setName("emit-event")
         .setDescription(
             "Генерирует тестовое событие, которое будет обработано слушателем."
         );
 
-    /**
-     * @constructor
-     * @param _embedFactory - Фабрика для создания эмбедов.
-     * @param _eventEmitter - Шина Событий для генерации событий.
-     */
     public constructor(
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
         private readonly _eventEmitter: EventEmitter2
     ) {}
 
+    /**
+     * @method execute
+     */
     public async execute(interaction: CommandInteraction): Promise<void> {
-
         this._eventEmitter.emit(
             "interaction.created",
             new InteractionCreateEvent(interaction)
@@ -39,7 +37,7 @@ export class EmitEventCommand implements ICommand {
         const successEmbed = this._embedFactory.createSuccessEmbed({
             description:
                 "Событие `interaction.created` было успешно сгенерировано!",
-            context: { user: interaction.user },
+            context: { user: interaction.user, guild: interaction.guild },
         });
 
         await interaction.reply({ embeds: [successEmbed], ephemeral: true });

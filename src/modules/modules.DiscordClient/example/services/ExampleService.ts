@@ -44,7 +44,11 @@ export class ExampleService {
             const uptime = process.uptime();
             const memoryUsage = process.memoryUsage();
             const cpuUsage = process.cpuUsage();
+
+            // Конвертируем время работы в читаемый формат
             const uptimeFormatted = this._formatUptime(uptime);
+
+            // Конвертируем память в мегабайты
             const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
             const memoryTotalMB = Math.round(
                 memoryUsage.heapTotal / 1024 / 1024
@@ -52,6 +56,8 @@ export class ExampleService {
             const memoryPercentage = Math.round(
                 (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100
             );
+
+            // Получаем загрузку системы (если доступно)
             let loadAverage: number[] = [];
             try {
                 const os = await import("os");
@@ -90,6 +96,8 @@ export class ExampleService {
             return healthInfo;
         } catch (error) {
             this._logger.error("Failed to get health information:", error);
+
+            // Возвращаем базовую информацию в случае ошибки
             return {
                 status: "degraded",
                 uptime: "unknown",
@@ -131,6 +139,8 @@ export class ExampleService {
 
         try {
             const healthInfo = await this.getHealthInfo();
+
+            // Проверяем использование памяти
             if (healthInfo.memory.percentage > 90) {
                 issues.push("⚠️ Высокое использование памяти");
                 status = "warning";
@@ -138,6 +148,8 @@ export class ExampleService {
                 issues.push("🚨 Критическое использование памяти");
                 status = "critical";
             }
+
+            // Проверяем загрузку системы (для Unix-систем)
             if (healthInfo.performance.loadAverage.length > 0) {
                 const avgLoad = healthInfo.performance.loadAverage[0];
                 if (avgLoad > 2.0) {
@@ -145,6 +157,8 @@ export class ExampleService {
                     status = status === "healthy" ? "warning" : status;
                 }
             }
+
+            // Проверяем время работы (если слишком мало, возможно недавний перезапуск)
             const uptimeSeconds = process.uptime();
             if (uptimeSeconds < 60) {
                 issues.push("ℹ️ Приложение недавно запущено");
@@ -191,4 +205,3 @@ export class ExampleService {
         }
     }
 }
-
