@@ -73,7 +73,6 @@ export class CommandHandlerService implements OnModuleInit {
     }
 
     private async _registerCommands(): Promise<void> {
-        // Адаптируем под ваш IConfig
         const guildId = this._config.get<string>("GUILD_ID");
         if (!guildId) {
             this._logger.error(
@@ -125,4 +124,5 @@ export class CommandHandlerService implements OnModuleInit {
         }
     }
 }
+
 
