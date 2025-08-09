@@ -54,7 +54,6 @@ export class HealthModuleCommand implements ICommand {
 
             await interaction.editReply({ embeds: [embed] });
         } catch (error) {
-            // Также передаем контекст в эмбед ошибки
             const errorEmbed = this._embedFactory.createErrorEmbed({
                 description:
                     "Не удалось получить информацию о состоянии системы.",
@@ -142,8 +141,6 @@ export class HealthModuleCommand implements ICommand {
                 inline: false,
             });
         }
-
-        // Создаем объект опций для кастомного эмбеда
         const embedOptions: CustomEmbedOptions = {
             title: `${statusEmoji} Состояние системы`,
             description: `Общий статус: **${systemStatus.status.toUpperCase()}**`,
@@ -173,3 +170,4 @@ export class HealthModuleCommand implements ICommand {
         return `${bar} ${percentage}%`;
     }
 }
+
