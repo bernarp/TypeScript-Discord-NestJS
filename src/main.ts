@@ -11,7 +11,7 @@ import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { ErrorLoggerService } from "@err/services/ErrorLoggerService";
 import { appErrorHandler } from "@err/appErrorHandler";
 
-async function bootstrap() {
+async function start() {
     const l = new Logger("Bootstrap");
     try {
         const NestJS = await NestFactory.create(AppModule, {
@@ -35,4 +35,4 @@ async function bootstrap() {
     }
 }
 
-bootstrap();
+start();

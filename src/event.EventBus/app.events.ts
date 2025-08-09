@@ -1,5 +1,3 @@
-import { Injectable } from "@nestjs/common";
-
 /**
  * @file app.events.ts
  * @description Централизованный реестр всех имен событий в приложении.
