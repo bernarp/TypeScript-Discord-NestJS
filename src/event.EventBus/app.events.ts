@@ -39,4 +39,8 @@ export const AppEvents = {
      * @payload {UserWarnedEvent} - TODO: Создать этот класс события
      */
     USER_WARNED: "user.warned",
+
+    MESSAGE_CREATED: "message.created",
+    MESSAGE_UPDATED: "message.updated",
+    MESSAGE_DELETED: "message.deleted",
 };
