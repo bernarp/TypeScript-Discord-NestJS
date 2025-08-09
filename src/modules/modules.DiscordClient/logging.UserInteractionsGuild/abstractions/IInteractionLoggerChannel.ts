@@ -21,7 +21,6 @@ export abstract class IInteractionLoggerChannel extends Service {
         @Inject("IGuildConfig") protected readonly _guildConfig: IGuildConfig
     ) {
         super();
-        // Инициализируем логгер с именем конкретного дочернего класса
         this._logger = new Logger(this.constructor.name);
     }
 
@@ -71,3 +70,4 @@ export abstract class IInteractionLoggerChannel extends Service {
         }
     }
 }
+
