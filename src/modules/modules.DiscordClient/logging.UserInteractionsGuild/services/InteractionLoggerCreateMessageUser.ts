@@ -1,31 +1,17 @@
 /**
  * @file InteractionLoggerCreateMessageUser.ts
  * @description Сервис, который слушает событие создания сообщения и логирует его.
+ * ВЕРСИЯ 2.0: Наследует AbstractMessageLogger.
  */
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
-import { IClient } from "@interface/IClient";
-import { IGuildConfig } from "@interface/IGuildConfig";
-import { TextChannel, User, Message, EmbedBuilder } from "discord.js";
-import { Service } from "@core/abstractions/Service";
+import { Message, EmbedBuilder } from "discord.js";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { MessageCreateEvent } from "@/event.EventBus/message-create.event";
+import { IInteractionLoggerChannel } from "../abstractions/IInteractionLoggerChannel";
 
 @Injectable()
-export class InteractionLoggerCreateMessageUser extends Service {
-    private readonly _logger = new Logger(
-        InteractionLoggerCreateMessageUser.name
-    );
-
-    constructor(
-        @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
-        @Inject("IClient") private readonly _client: IClient,
-        @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig
-    ) {
-        super();
-    }
-
+export class InteractionLoggerCreateMessageUser extends IInteractionLoggerChannel {
     /**
      * @method onMessageCreated
      * @description Координирует процесс логирования созданного сообщения.
@@ -40,7 +26,7 @@ export class InteractionLoggerCreateMessageUser extends Service {
         }
 
         const logChannelId = await this._guildConfig.get(
-            message.guildId,
+            message.guildId!,
             "logChannelMessageSendId"
         );
         if (!logChannelId) {
@@ -48,24 +34,7 @@ export class InteractionLoggerCreateMessageUser extends Service {
         }
 
         const logEmbed = this._createLogEmbed(message);
-        await this._sendLog(logChannelId, message.guildId, logEmbed);
-    }
-
-    /**
-     * @private
-     * @method _isLoggable
-     * @description Проверяет, подлежит ли сообщение логированию.
-     * @param {Message} message - Созданное сообщение.
-     * @returns {boolean} True, если сообщение нужно логировать.
-     */
-    private _isLoggable(message: Message): boolean {
-        // Для create события message всегда полный, поэтому проверки на partial не нужны.
-        return !!(
-            message.guild &&
-            message.guildId &&
-            message.author &&
-            !message.author.bot
-        );
+        await this._sendLog(logChannelId, message.guildId!, logEmbed);
     }
 
     /**
@@ -103,35 +72,5 @@ export class InteractionLoggerCreateMessageUser extends Service {
             ],
             context: { user: author, guild: message.guild! },
         });
-    }
-
-    /**
-     * @private
-     * @method _sendLog
-     * @description Отправляет embed в указанный канал логов.
-     * @param {string} channelId - ID канала для логов.
-     * @param {string} guildId - ID сервера.
-     * @param {EmbedBuilder} embed - Сообщение для отправки.
-     */
-    private async _sendLog(
-        channelId: string,
-        guildId: string,
-        embed: EmbedBuilder
-    ): Promise<void> {
-        try {
-            const logChannel = await this._client.channels.fetch(channelId);
-            if (logChannel instanceof TextChannel) {
-                await logChannel.send({ embeds: [embed] });
-            } else {
-                this._logger.warn(
-                    `Channel ${channelId} is not a text channel for guild ${guildId}.`
-                );
-            }
-        } catch (error) {
-            this._logger.error(
-                `Failed to send log message to channel ${channelId} for guild ${guildId}:`,
-                error
-            );
-        }
     }
 }

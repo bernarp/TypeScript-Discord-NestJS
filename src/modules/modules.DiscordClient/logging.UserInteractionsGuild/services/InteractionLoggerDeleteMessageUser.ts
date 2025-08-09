@@ -1,39 +1,23 @@
 /**
  * @file InteractionLoggerDeleteMessageUser.ts
  * @description Сервис, который слушает событие удаления сообщения и логирует его.
- * @version 4.1: Исправлена ошибка типизации при получении исполнителя из аудит-лога.
+ * ВЕРСИЯ 5.0: Наследует AbstractMessageLogger.
  */
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
-import { IClient } from "@interface/IClient";
-import { IGuildConfig } from "@interface/IGuildConfig";
 import {
-    TextChannel,
     AuditLogEvent,
     User,
     Message,
     PartialMessage,
     EmbedBuilder,
 } from "discord.js";
-import { Service } from "@core/abstractions/Service";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { MessageDeleteEvent } from "@/event.EventBus/message-delete.event";
+import { IInteractionLoggerChannel } from "../abstractions/IInteractionLoggerChannel";
 
 @Injectable()
-export class InteractionLoggerDeleteMessageUser extends Service {
-    private readonly _logger = new Logger(
-        InteractionLoggerDeleteMessageUser.name
-    );
-
-    constructor(
-        @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
-        @Inject("IClient") private readonly _client: IClient,
-        @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig
-    ) {
-        super();
-    }
-
+export class InteractionLoggerDeleteMessageUser extends IInteractionLoggerChannel {
     /**
      * @method onMessageDeleted
      * @description Координирует процесс логирования удаленного сообщения.
@@ -48,7 +32,7 @@ export class InteractionLoggerDeleteMessageUser extends Service {
         }
 
         const logChannelId = await this._guildConfig.get(
-            deletedMessage.guildId,
+            deletedMessage.guildId!,
             "logChannelMessageDeleteId"
         );
         if (!logChannelId) {
@@ -58,29 +42,12 @@ export class InteractionLoggerDeleteMessageUser extends Service {
         const { author, executor } = await this._fetchAuthorAndExecutor(
             deletedMessage
         );
-        // Если автора или исполнителя определить не удалось, логировать нечего.
         if (!author || !executor) {
             return;
         }
 
         const logEmbed = this._createLogEmbed(deletedMessage, author, executor);
-        await this._sendLog(logChannelId, deletedMessage.guildId, logEmbed);
-    }
-
-    /**
-     * @private
-     * @method _isLoggable
-     * @description Проверяет, подлежит ли сообщение логированию (не бот, есть автор и сервер).
-     * @param {Message | PartialMessage} message - Удаленное сообщение.
-     * @returns {boolean} True, если сообщение нужно логировать.
-     */
-    private _isLoggable(message: Message | PartialMessage): boolean {
-        return !!(
-            message.guild &&
-            message.guildId &&
-            message.author &&
-            !message.author.bot
-        );
+        await this._sendLog(logChannelId, deletedMessage.guildId!, logEmbed);
     }
 
     /**
@@ -100,6 +67,7 @@ export class InteractionLoggerDeleteMessageUser extends Service {
                 : message.author;
         }
         if (!author) return { author: null, executor: null };
+
         let executor: User | null = author;
         if (message.guild) {
             try {
@@ -111,7 +79,7 @@ export class InteractionLoggerDeleteMessageUser extends Service {
                 const deleteLog = auditLogs.entries.find(
                     (log) =>
                         log.target.id === author?.id &&
-                        Date.now() - log.createdTimestamp < 5000 
+                        Date.now() - log.createdTimestamp < 5000
                 );
                 if (deleteLog?.executor) {
                     executor = await this._client.users.fetch(
@@ -174,35 +142,5 @@ export class InteractionLoggerDeleteMessageUser extends Service {
             ],
             context: { user: author, guild: message.guild! },
         });
-    }
-
-    /**
-     * @private
-     * @method _sendLog
-     * @description Отправляет embed в указанный канал логов.
-     * @param {string} channelId - ID канала для логов.
-     * @param {string} guildId - ID сервера.
-     * @param {EmbedBuilder} embed - Сообщение для отправки.
-     */
-    private async _sendLog(
-        channelId: string,
-        guildId: string,
-        embed: EmbedBuilder
-    ): Promise<void> {
-        try {
-            const logChannel = await this._client.channels.fetch(channelId);
-            if (logChannel instanceof TextChannel) {
-                await logChannel.send({ embeds: [embed] });
-            } else {
-                this._logger.warn(
-                    `Channel ${channelId} is not a text channel for guild ${guildId}.`
-                );
-            }
-        } catch (error) {
-            this._logger.error(
-                `Failed to send log message to channel ${channelId} for guild ${guildId}:`,
-                error
-            );
-        }
     }
 }

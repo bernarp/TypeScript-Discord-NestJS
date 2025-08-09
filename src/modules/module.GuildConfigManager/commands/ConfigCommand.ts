@@ -43,6 +43,12 @@ const CONFIGURABLE_SETTINGS: ReadonlyArray<{
         key: "logChannelMessageSendId",
         name: "Канал логов: Отправка сообщений (СПАМ!)",
     },
+    // Добавьте сюда другие настройки по мере необходимости
+    // Например:
+    // {
+    //   key: "welcomeChannelId",
+    //   name: "Канал для приветствий",
+    // },
 ];
 
 @Command()
@@ -64,6 +70,7 @@ export class ConfigCommand implements ICommand {
                             "Настройка, которую вы хотите изменить."
                         )
                         .setRequired(true)
+                        // Динамически генерируем опции из единого источника
                         .addChoices(
                             ...CONFIGURABLE_SETTINGS.map((setting) => ({
                                 name: setting.name,
@@ -95,6 +102,7 @@ export class ConfigCommand implements ICommand {
         @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig,
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory
     ) {
+        // Инициализируем карту имен из единого источника при создании сервиса
         this._settingNames = new Map(
             CONFIGURABLE_SETTINGS.map((s) => [s.key, s.name])
         );
@@ -166,6 +174,7 @@ export class ConfigCommand implements ICommand {
     ): Promise<void> {
         const config = await this._guildConfig.getAll(interaction.guildId!);
 
+        // Динамически генерируем поля для встраиваемого сообщения
         const fields: EmbedField[] = CONFIGURABLE_SETTINGS.map((setting) => {
             const value = config?.[setting.key];
             return {
@@ -196,4 +205,3 @@ export class ConfigCommand implements ICommand {
         return value ? `<#${value}>` : "Не настроен";
     }
 }
-
