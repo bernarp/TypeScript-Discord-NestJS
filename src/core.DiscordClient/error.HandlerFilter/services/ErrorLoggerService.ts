@@ -7,13 +7,12 @@ import { CommandInteraction } from "discord.js";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { ErrorLog } from "@err/interfaces/IErrorLog";
+import { ErrorLog } from "@interface/error/IErrorLog";
 
 /**
  * @interface ErrorLog
  * @description Структура данных для лога ошибки.
  */
-
 
 @Injectable()
 export class ErrorLoggerService {
