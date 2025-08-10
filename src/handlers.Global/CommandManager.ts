@@ -1,17 +1,22 @@
 /**
  * @file CommandHandler.ts
  * @description Главный сервис, который находит, регистрирует и выполняет команды.
+ * ВЕРСИЯ 2.0: Добавлена поддержка AutocompleteInteraction.
  */
 import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { DiscoveryService, Reflector } from "@nestjs/core";
-import { ChatInputCommandInteraction, Collection } from "discord.js";
+import {
+    ChatInputCommandInteraction,
+    Collection,
+    Interaction, // ИЗМЕНЕНИЕ: Импортируем базовый тип Interaction
+} from "discord.js";
 import { IClient } from "@interface/IClient";
 import { ICommand } from "@interface/ICommand";
 import { IConfig } from "@interface/IConfig";
 import { COMMAND_METADATA_KEY } from "@decorators/command.decorator";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { AppEvents } from "@/event.EventBus/app.events";
-import { InteractionCreateEvent } from "@/event.EventBus/interaction-create.event";
+import { InteractionCreateEvent } from "@event.EventBus/interaction-create.event";
 
 @Injectable()
 export class CommandHandlerService implements OnModuleInit {
@@ -23,7 +28,7 @@ export class CommandHandlerService implements OnModuleInit {
         @Inject("IConfig") private readonly _config: IConfig,
         private readonly _discoveryService: DiscoveryService,
         private readonly _reflector: Reflector,
-        private readonly _eventEmitter: EventEmitter2 // Внедряем EventEmitter
+        private readonly _eventEmitter: EventEmitter2
     ) {}
 
     public async onModuleInit(): Promise<void> {
@@ -69,8 +74,8 @@ export class CommandHandlerService implements OnModuleInit {
     private async _setupAndRegisterCommands(): Promise<void> {
         await this._registerCommands();
 
+        // ИЗМЕНЕНИЕ: Слушаем событие и передаем его в новый, более умный обработчик.
         this._client.on("interactionCreate", (interaction) => {
-            if (!interaction.isChatInputCommand()) return;
             this._onInteractionCreate(interaction);
         });
 
@@ -104,36 +109,59 @@ export class CommandHandlerService implements OnModuleInit {
         }
     }
 
+    // ИЗМЕНЕНИЕ: Метод теперь принимает базовый тип Interaction и сам решает, что делать.
     private async _onInteractionCreate(
-        interaction: ChatInputCommandInteraction
+        interaction: Interaction
     ): Promise<void> {
+        // Проверяем, является ли взаимодействие командой или автодополнением.
+        // Остальные типы (кнопки, модальные окна) игнорируем.
+        if (
+            !interaction.isChatInputCommand() &&
+            !interaction.isAutocomplete()
+        ) {
+            return;
+        }
+
         const command = this._commands.get(interaction.commandName);
-        if (!command) return;
+        if (!command) {
+            this._logger.warn(
+                `Received interaction for an unknown command: "${interaction.commandName}"`
+            );
+            return;
+        }
 
         try {
+            // Передаем взаимодействие в команду. Команда сама разберется,
+            // автодополнение это или выполнение.
             await command.execute(interaction);
 
-            this._logger.debug(
-                `Emitting event for command "${interaction.commandName}" execution.`
-            );
-            this._eventEmitter.emit(
-                AppEvents.INTERACTION_CREATED_COMMAND,
-                new InteractionCreateEvent(interaction)
-            );
+            // Генерируем событие только для реального выполнения команды, а не для автодополнения.
+            if (interaction.isChatInputCommand()) {
+                this._logger.debug(
+                    `Emitting event for command "${interaction.commandName}" execution.`
+                );
+                this._eventEmitter.emit(
+                    AppEvents.INTERACTION_CREATED_COMMAND,
+                    new InteractionCreateEvent(interaction)
+                );
+            }
         } catch (error) {
             this._logger.error(
-                `Error executing command "${command.data.name}":`,
+                `Error processing interaction for command "${command.data.name}":`,
                 error
             );
-            // TODO: Рассмотреть возможность генерации события об ошибке выполнения команды
-            const reply = {
-                content: "An error occurred while executing the command.",
-                ephemeral: true,
-            };
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(reply);
-            } else {
-                await interaction.reply(reply);
+
+            // Отвечаем на ошибку только если это не автодополнение.
+            if (interaction.isChatInputCommand()) {
+                const reply = {
+                    content: "An error occurred while executing the command.",
+                    ephemeral: true,
+                };
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp(reply);
+                } else {
+                    await interaction.reply(reply);
+                }
             }
         }
     }

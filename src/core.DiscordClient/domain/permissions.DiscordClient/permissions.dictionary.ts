@@ -84,6 +84,10 @@ export const Permissions = {
      * @description Позволяет изменять, от каких групп наследуется текущая группа.
      */
     PERMISSIONS_GROUP_SET_INHERITANCE: "permissions.group.set_inheritance",
+    /**
+     * @permission permissions.group.set_inheritance
+     * @description Позволяет изменять, от каких групп наследуется текущая группа.
+     */
 } as const; 
 
 /**

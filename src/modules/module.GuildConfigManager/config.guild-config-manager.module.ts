@@ -12,6 +12,8 @@ import { GroupCreateHandler } from "./services/components.PermissionsService/Gro
 import { GroupDeleteHandler } from "./services/components.PermissionsService/GroupDelete.handler";
 import { GroupGrantHandler } from "./services/components.PermissionsService/GroupGrant.handler";
 import { GroupRevokeHandler } from "./services/components.PermissionsService/GroupRevoke.handler";
+import { AutocompleteHandler } from "./services/components.PermissionsService/Autocomplete.handler";
+import { GroupSetInheritanceHandler } from "./services/components.PermissionsService/GroupSetInheritance.handler";
 
 @Module({
     imports: [CoreModule],
@@ -24,6 +26,8 @@ import { GroupRevokeHandler } from "./services/components.PermissionsService/Gro
         ConfigCommand,
         PermissionsCommand,
         PermissionService,
+        AutocompleteHandler,
+        GroupSetInheritanceHandler,
         {
             provide: "IPermissionService",
             useClass: PermissionService,

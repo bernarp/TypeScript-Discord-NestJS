@@ -144,7 +144,13 @@ export class ConfigCommand implements ICommand {
 
         const embed = this._embedFactory.createSuccessEmbed({
             description: `Настройка **${settingName}** была успешно обновлена!`,
-            fields: [{ name: "Новое значение", value: channel.toString(), inline: false}],
+            fields: [
+                {
+                    name: "Новое значение",
+                    value: channel.toString(),
+                    inline: false,
+                },
+            ],
             context: { user: interaction.user, guild: interaction.guild },
         });
 

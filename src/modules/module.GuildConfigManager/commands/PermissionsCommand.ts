@@ -1,18 +1,18 @@
 /**
  * @file PermissionsCommand.ts
  * @description Команда для управления системой прав доступа.
- * ВЕРСИЯ 2.0: Делегирует выполнение подкоманд специализированным обработчикам.
+ * ВЕРСИЯ 5.1: Добавлена подкоманда set-inheritance для управления наследованием.
  */
 import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import {
     SlashCommandBuilder,
     CommandInteraction,
     ChatInputCommandInteraction,
+    AutocompleteInteraction,
     GuildMember,
 } from "discord.js";
 import { Command } from "@decorators/command.decorator";
 import { ICommand } from "@interface/ICommand";
-import { IPermissionService } from "../abstractions/IPermissionService";
 import {
     Permissions,
     PermissionNode,
@@ -25,6 +25,9 @@ import { GroupAssignRoleHandler } from "../services/components.PermissionsServic
 import { GroupGrantHandler } from "../services/components.PermissionsService/GroupGrant.handler";
 import { GroupRevokeHandler } from "../services/components.PermissionsService/GroupRevoke.handler";
 import { IGuildConfig } from "@interface/IGuildConfig";
+import { AutocompleteHandler } from "../services/components.PermissionsService/Autocomplete.handler";
+import { IPermissionService } from "../abstractions/IPermissionService";
+import { GroupSetInheritanceHandler } from "../services/components.PermissionsService/GroupSetInheritance.handler";
 
 @Command()
 @Injectable()
@@ -138,6 +141,29 @@ export class PermissionsCommand implements ICommand, OnModuleInit {
                                 .setAutocomplete(true)
                         )
                 )
+                .addSubcommand((sub) =>
+                    sub
+                        .setName("set-inheritance")
+                        .setDescription("Настраивает наследование для группы.")
+                        .addStringOption((opt) =>
+                            opt
+                                .setName("group_key")
+                                .setDescription(
+                                    "Группа, которую вы настраиваете."
+                                )
+                                .setRequired(true)
+                                .setAutocomplete(true)
+                        )
+                        .addStringOption((opt) =>
+                            opt
+                                .setName("inherits_from")
+                                .setDescription(
+                                    "Системные имена групп-родителей через запятую."
+                                )
+                                .setRequired(false)
+                                .setAutocomplete(true)
+                        )
+                )
         )
         .addSubcommand((sub) =>
             sub
@@ -149,32 +175,34 @@ export class PermissionsCommand implements ICommand, OnModuleInit {
         string,
         IPermissionSubcommandHandler
     >();
+
     private readonly _permissionMap = new Map<string, PermissionNode>([
         ["create", Permissions.PERMISSIONS_GROUP_CREATE],
         ["delete", Permissions.PERMISSIONS_GROUP_DELETE],
         ["assign-role", Permissions.PERMISSIONS_GROUP_ASSIGN_ROLE],
         ["grant", Permissions.PERMISSIONS_GROUP_GRANT],
-        ["revoke", Permissions.PERMISSIONS_GROUP_GRANT], // Отзыв - часть выдачи
+        ["revoke", Permissions.PERMISSIONS_GROUP_GRANT],
+        ["set-inheritance", Permissions.PERMISSIONS_GROUP_SET_INHERITANCE],
         ["view", Permissions.PERMISSIONS_VIEW],
     ]);
 
     constructor(
-        @Inject("IPermissionService")
-        private readonly _permissionService: IPermissionService,
         @Inject("IEmbedFactory")
         private readonly _embedFactory: IEmbedFactory,
         @Inject("IGuildConfig")
         private readonly _guildConfig: IGuildConfig,
-        // Внедряем все обработчики
+        @Inject("IPermissionService")
+        private readonly _permissionService: IPermissionService,
         private readonly _groupCreateHandler: GroupCreateHandler,
         private readonly _groupDeleteHandler: GroupDeleteHandler,
         private readonly _groupAssignRoleHandler: GroupAssignRoleHandler,
         private readonly _groupGrantHandler: GroupGrantHandler,
-        private readonly _groupRevokeHandler: GroupRevokeHandler
+        private readonly _groupRevokeHandler: GroupRevokeHandler,
+        private readonly _autocompleteHandler: AutocompleteHandler,
+        private readonly _groupSetInheritanceHandler: GroupSetInheritanceHandler
     ) {}
 
     public onModuleInit() {
-        // Регистрируем обработчики
         this._subcommandHandlers.set("create", this._groupCreateHandler);
         this._subcommandHandlers.set("delete", this._groupDeleteHandler);
         this._subcommandHandlers.set(
@@ -183,10 +211,26 @@ export class PermissionsCommand implements ICommand, OnModuleInit {
         );
         this._subcommandHandlers.set("grant", this._groupGrantHandler);
         this._subcommandHandlers.set("revoke", this._groupRevokeHandler);
+        this._subcommandHandlers.set(
+            "set-inheritance",
+            this._groupSetInheritanceHandler
+        );
     }
 
-    public async execute(interaction: CommandInteraction): Promise<void> {
-        if (!interaction.isChatInputCommand() || !interaction.inGuild()) return;
+    public async execute(
+        interaction: CommandInteraction | AutocompleteInteraction
+    ): Promise<void> {
+        if (interaction.isAutocomplete()) {
+            await this._autocompleteHandler.handle(interaction);
+        } else if (interaction.isChatInputCommand()) {
+            await this._handleChatInputCommand(interaction);
+        }
+    }
+
+    private async _handleChatInputCommand(
+        interaction: ChatInputCommandInteraction
+    ): Promise<void> {
+        if (!interaction.inGuild()) return;
 
         const subcommand = interaction.options.getSubcommand();
         const requiredPermission = this._permissionMap.get(subcommand);

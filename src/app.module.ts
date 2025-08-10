@@ -12,11 +12,14 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
 import { LoggingUserInteractionsGuildModule } from "@modules.DiscordClient/logging.UserInteractionsGuild/logging.user-interactions.module";
 import { TicketGuildsystemModule } from "@modules.DiscordClient/ticket.GuildSystem/ticket.guildsystem.module";
 import { GuildConfigModule } from "./modules/module.GuildConfigManager/config.guild-config-manager.module";
+import { PermissionGuard } from "./guards.NestJS/PermissionGuard";
+import { APP_GUARD } from "@nestjs/core";
 
 @Module({
     imports: [
         EventEmitterModule.forRoot(),
         CoreModule,
+        GuildConfigModule,
         registerModule.register({
             imports: [ExampleModule, GuildConfigModule],
         }),
@@ -29,6 +32,10 @@ import { GuildConfigModule } from "./modules/module.GuildConfigManager/config.gu
         {
             provide: "IClient",
             useClass: Client,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: PermissionGuard,
         },
     ],
 })
