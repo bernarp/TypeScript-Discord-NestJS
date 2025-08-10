@@ -1,8 +1,0 @@
-{
-    "id_guild_example": {
-        "logChannelId": "1234567890987645",
-        "logChannelMessageSendId": "1234567890987645",
-        "logChannelMessageDeleteId": "1234567890987645",
-        "logChannelMessageEditId": "1234567890987645"
-    }
-}
