@@ -13,6 +13,7 @@
  * и проверяться в PermissionService.
  */
 export const Permissions = {
+    // --- Общие права администратора ---
     /**
      * @permission *
      * @description Предоставляет абсолютно все права. Это wildcard-разрешение.
@@ -20,6 +21,12 @@ export const Permissions = {
      */
     ADMIN_ALL: "*",
 
+    // --- Управление тикетами ---
+    /**
+     * @permission ticket.create
+     * @description Позволяет пользователю создавать новые тикеты.
+     */
+    TICKET_CREATE: "ticket.create",
     /**
      * @permission ticket.close
      * @description Позволяет пользователю закрывать свой или чужой тикет.
@@ -53,7 +60,7 @@ export const Permissions = {
      */
     CONFIG_SET: "config.set",
 
-    // --- Управление системой прав (/config permissions) ---
+    // --- Управление системой прав (/permissions) ---
     /**
      * @permission permissions.view
      * @description Позволяет просматривать список групп прав и их состав.
@@ -84,11 +91,56 @@ export const Permissions = {
      * @description Позволяет изменять, от каких групп наследуется текущая группа.
      */
     PERMISSIONS_GROUP_SET_INHERITANCE: "permissions.group.set_inheritance",
+
+    // --- Модерация участников ---
     /**
-     * @permission permissions.group.set_inheritance
-     * @description Позволяет изменять, от каких групп наследуется текущая группа.
+     * @permission moderation.kick
+     * @description Позволяет выгонять участников с сервера.
      */
-} as const; 
+    MODERATION_KICK: "moderation.kick",
+    /**
+     * @permission moderation.ban
+     * @description Позволяет блокировать и разблокировать участников на сервере.
+     */
+    MODERATION_BAN: "moderation.ban",
+    /**
+     * @permission moderation.timeout
+     * @description Позволяет временно изолировать участников (выдавать и снимать мьют).
+     */
+    MODERATION_TIMEOUT: "moderation.timeout",
+    /**
+     * @permission moderation.warn
+     * @description Позволяет выдавать и снимать предупреждения участникам.
+     */
+    MODERATION_WARN: "moderation.warn",
+    /**
+     * @permission moderation.history
+     * @description Позволяет просматривать историю модерации (варны, баны и т.д.) участника.
+     */
+    MODERATION_HISTORY: "moderation.history",
+
+    // --- Управление ролями ---
+    /**
+     * @permission roles.manage.add
+     * @description Позволяет выдавать роли участникам (через команду, например /role add).
+     */
+    ROLES_MANAGE_ADD: "roles.manage.add",
+    /**
+     * @permission roles.manage.remove
+     * @description Позволяет забирать роли у участников (через команду, например /role remove).
+     */
+    ROLES_MANAGE_REMOVE: "roles.manage.remove",
+    /**
+     * @permission roles.manage.autorole
+     * @description Позволяет настраивать автоматическую выдачу ролей (например, при входе на сервер).
+     */
+    ROLES_MANAGE_AUTOROLE: "roles.manage.autorole",
+    /**
+     * @permission roles.manage.reaction
+     * @description Позволяет настраивать выдачу ролей по реакции на сообщение.
+     */
+    ROLES_MANAGE_REACTION: "roles.manage.reaction",
+} as const;
 
 /**
  * @type PermissionNode
