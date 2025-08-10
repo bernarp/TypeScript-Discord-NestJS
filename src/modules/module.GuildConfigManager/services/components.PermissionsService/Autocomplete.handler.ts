@@ -14,7 +14,6 @@ export class AutocompleteHandler {
     constructor(
         @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig
     ) {
-        // Кэшируем список всех прав при создании сервиса для производительности
         this._allPermissions = Object.values(Permissions);
     }
 
@@ -77,8 +76,9 @@ export class AutocompleteHandler {
         );
 
         return filtered.slice(0, 25).map((key) => ({
-            name: `${groups[key].name} (${key})`, // Показываем и имя, и ключ
+            name: `${groups[key].name} (${key})`,
             value: key,
         }));
     }
 }
+
