@@ -1,3 +1,4 @@
+// Этот файл автоматически создаётся после использования /config set; или /permissions group create;... 
 {
     "id_guild": {
         "logChannelMessageDeleteId": "1234567890123456789",
