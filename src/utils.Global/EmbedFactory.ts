@@ -60,12 +60,11 @@ export class EmbedFactory implements IEmbedFactory, OnModuleInit {
      * @description  Этот метод теперь игнорирует title и color, если они были переданы.
      */
     public createSuccessEmbed(options: EmbedStencilOptions): EmbedBuilder {
-        // Деструктуризация: мы "вынимаем" title и color из опций, чтобы они не попали в ...rest.
         const { title, color, ...rest } = options;
         return this.create({
-            title: "✅ Успех", // Мы всегда используем НАШ заголовок
-            ...rest, // Передаем остальные опции
-            color: Colors.Green, // И всегда используем НАШ цвет
+            title: "✅ Успех", 
+            ...rest,
+            color: Colors.Green,
         });
     }
 

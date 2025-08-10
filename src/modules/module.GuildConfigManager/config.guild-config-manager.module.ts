@@ -5,10 +5,30 @@
 import { Module } from "@nestjs/common";
 import { CoreModule } from "@/core.module";
 import { ConfigCommand } from "./commands/ConfigCommand";
+import { PermissionService } from "./services/PermissionService";
+import { PermissionsCommand } from "./commands/PermissionsCommand";
+import { GroupAssignRoleHandler } from "./services/components.PermissionsService/GroupAssignRole.handler";
+import { GroupCreateHandler } from "./services/components.PermissionsService/GroupCreate.handler";
+import { GroupDeleteHandler } from "./services/components.PermissionsService/GroupDelete.handler";
+import { GroupGrantHandler } from "./services/components.PermissionsService/GroupGrant.handler";
+import { GroupRevokeHandler } from "./services/components.PermissionsService/GroupRevoke.handler";
 
 @Module({
     imports: [CoreModule],
-    providers: [ConfigCommand],
-    exports: []
+    providers: [
+        GroupAssignRoleHandler,
+        GroupCreateHandler,
+        GroupDeleteHandler,
+        GroupGrantHandler,
+        GroupRevokeHandler,
+        ConfigCommand,
+        PermissionsCommand,
+        PermissionService,
+        {
+            provide: "IPermissionService",
+            useClass: PermissionService,
+        },
+    ],
+    exports: ["IPermissionService"],
 })
 export class GuildConfigModule {}

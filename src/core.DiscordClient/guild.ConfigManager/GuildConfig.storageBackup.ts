@@ -1,7 +1,6 @@
 /**
  * @file GuildConfig.storage.ts
  * @description Класс, инкапсулирующий логику чтения и записи конфигурации в JSON-файл.
- * ВЕРСИЯ 2.0: Реализована безопасная запись через временный файл.
  */
 import { Logger } from "@nestjs/common";
 import * as fs from "fs/promises";
@@ -45,39 +44,17 @@ export class GuildConfigStorage {
 
     /**
      * @method save
-     * @description Безопасно сохраняет кэш конфигураций в файл.
-     * Этот метод использует стратегию "запись во временный файл -> переименование",
-     * чтобы гарантировать, что основной файл конфигурации не будет поврежден,
-     * если процесс завершится во время операции записи.
+     * @description Сохраняет кэш конфигураций в файл.
      * @param {ConfigCache} cache - Кэш для сохранения.
      */
     public async save(cache: ConfigCache): Promise<void> {
-        const tempFilePath = this._filePath + ".tmp";
-
         try {
             const dataToSave = Object.fromEntries(cache);
             const jsonString = JSON.stringify(dataToSave, null, 4);
-            await fs.writeFile(tempFilePath, jsonString, "utf-8");
-            await fs.rename(tempFilePath, this._filePath);
-            this._logger.debug(
-                `Configuration successfully saved to ${this._filePath}`
-            );
+            await fs.writeFile(this._filePath, jsonString, "utf-8");
         } catch (error) {
-            this._logger.error("Failed to safely save config file:", error);
-            try {
-                await fs.unlink(tempFilePath);
-                this._logger.warn(
-                    `Cleaned up temporary file after failed save: ${tempFilePath}`
-                );
-            } catch (cleanupError) {
-                if (cleanupError.code !== "ENOENT") {
-                    this._logger.error(
-                        `Failed to cleanup temporary file ${tempFilePath}:`,
-                        cleanupError
-                    );
-                }
-            }
-            throw error;
+            this._logger.error("Failed to save config file:", error);
+            throw error; 
         }
     }
 
@@ -96,11 +73,6 @@ export class GuildConfigStorage {
             return backupPath;
         } catch (error) {
             this._logger.error("Failed to create backup:", error);
-            if (error.code === "ENOENT") {
-                this._logger.warn(
-                    `Could not create backup because source file does not exist yet: ${this._filePath}`
-                );
-            }
             throw error;
         }
     }

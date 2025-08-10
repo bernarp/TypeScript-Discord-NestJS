@@ -1,110 +1,127 @@
 /**
-@file IGuildConfig.ts
-@description Определяет контракт для сервиса управления динамической конфигурацией гильдий.
-*/
+ * @file IGuildConfig.ts
+ * @description Определяет контракт для сервиса управления динамической конфигурацией гильдий.
+ * ВЕРСИЯ 3.0: Добавлены методы для управления группами прав.
+ */
+
+import { IPermissionGroup } from "./IPermissionGroup";
+import { PermissionNode } from "@permissions/permissions.dictionary";
 
 /**
-@interface GuildSettings
-@description Структура, описывающая все возможные настройки для одной гильдии.
-*/
+ * @interface IGuildSettings
+ * @description Структура, описывающая все возможные настройки для одной гильдии.
+ */
 export interface IGuildSettings {
-    /**
-  @property {string} [logChannelId]
-  @description ID основного канала для общих логов (например, выполнение команд).
-  */
     logChannelId?: string;
-
-    /**
-  @property {string} [welcomeChannelId]
-  @description ID канала для приветственных сообщений.
-  */
     welcomeChannelId?: string;
-
-    /**
-  @property {string} [moderationRoleId]
-  @description ID роли модераторов.
-  */
     moderationRoleId?: string;
-
-    /**
-  @property {string} [logChannelMessageDeleteId]
-  @description ID канала для логирования удаленных сообщений.
-  @todo Реализовать сервис-слушатель для события удаления сообщения.
-  */
     logChannelMessageDeleteId?: string;
-
-    /**
-  @property {string} [logChannelMessageEditId]
-  @description ID канала для логирования отредактированных сообщений.
-  @todo Реализовать сервис-слушатель для события редактирования сообщения.
-  */
     logChannelMessageEditId?: string;
-
-    /**
-  @property {string} [logChannelMessageSendId]
-  @description ID канала для логирования всех отправленных сообщений (может быть спамным).
-  @todo Реализовать сервис-слушатель для события создания сообщения.
-  */
     logChannelMessageSendId?: string;
-
-    // ... другие возможные настройки
+    permissionGroups?: Record<string, IPermissionGroup>;
 }
 
 /**
-@interface IGuildConfig
-@description Контракт для сервиса управления конфигурацией.
-*/
+ * @interface IGuildConfig
+ * @description Контракт для сервиса управления конфигурацией.
+ */
 export interface IGuildConfig {
-    /**
-  @method get
-  @description
-  Использование дженерика <T> позволяет получать типизированные значения.
-  @template T - Ожидаемый тип возвращаемого значения (например, string, number, boolean).
-  @param {string} guildId - ID гильдии, для которой запрашивается настройка.
-  @param {keyof IGuildSettings} key - Ключ настройки, которую нужно получить (например, 'logChannelId').
-  Использование `keyof IGuildSettings` обеспечивает строгую типизацию и автодополнение ключей.
-  @param {T} [defaultValue] - Опциональное значение, которое будет возвращено, если настройка для гильдии или конкретный ключ не найдены.
-  @returns {Promise<T | undefined>} Значение настройки или defaultValue. Возвращает undefined, если настройка не найдена и defaultValue не предоставлен.
-  */
+    // --- Базовые методы ---
     get<T extends IGuildSettings[keyof IGuildSettings]>(
         guildId: string,
         key: keyof IGuildSettings,
         defaultValue?: T
     ): Promise<T | undefined>;
-
-    /**
-  @method set
-  @description Устанавливает (обновляет) одну или несколько настроек для указанной гильдии.
-  @param {string} guildId - ID гильдии, для которой устанавливаются настройки.
-  @param {Partial<IGuildSettings>} newSettings - Объект с настройками, которые нужно изменить.
-  @returns {Promise<IGuildSettings>} Обновленный полный объект настроек для гильдии.
-  */
     set(
         guildId: string,
         newSettings: Partial<IGuildSettings>
     ): Promise<IGuildSettings>;
-
-    /**
-  @method save
-  @description Принудительно сохраняет все конфигурации из кэша в постоянное хранилище.
-  @returns {Promise<void>}
-  */
     save(): Promise<void>;
-
-    /**
-  @method backup
-  @description Создает резервную копию текущего файла конфигурации.
-  @param {string} [backupName] - Опциональное имя для файла бэкапа.
-  @returns {Promise<string>} Путь к созданному файлу резервной копии.
-  */
     backup(backupName?: string): Promise<string>;
+    getAll(guildId: string): Promise<IGuildSettings | null>;
+
+    // --- Методы для управления правами ---
 
     /**
-  @method getAll
-  @description Запрашивает ПОЛНУЮ конфигурацию для указанной гильдии.
-  Этот метод добавлен, так как get теперь запрашивает только одно поле.
-  @param {string} guildId - ID гильдии.
-  @returns {Promise<IGuildSettings | null>} Объект с настройками или null.
-  */
-    getAll(guildId: string): Promise<IGuildSettings | null>;
+     * @method getPermissionGroups
+     * @description Получает все группы прав для указанной гильдии.
+     */
+    getPermissionGroups(
+        guildId: string
+    ): Promise<Record<string, IPermissionGroup> | undefined>;
+
+    /**
+     * @method getPermissionGroup
+     * @description Получает одну конкретную группу прав по ее системному имени.
+     */
+    getPermissionGroup(
+        guildId: string,
+        groupKey: string
+    ): Promise<IPermissionGroup | undefined>;
+
+    /**
+     * @method createPermissionGroup
+     * @description Создает новую, пустую группу прав.
+     */
+    createPermissionGroup(
+        guildId: string,
+        groupKey: string,
+        groupName: string
+    ): Promise<void>;
+
+    /**
+     * @method deletePermissionGroup
+     * @description Удаляет существующую группу прав.
+     */
+    deletePermissionGroup(guildId: string, groupKey: string): Promise<void>;
+
+    /**
+     * @method addRoleToGroup
+     * @description Добавляет роль Discord в группу прав.
+     */
+    addRoleToGroup(
+        guildId: string,
+        groupKey: string,
+        roleId: string
+    ): Promise<void>;
+
+    /**
+     * @method removeRoleFromGroup
+     * @description Удаляет роль Discord из группы прав.
+     */
+    removeRoleFromGroup(
+        guildId: string,
+        groupKey: string,
+        roleId: string
+    ): Promise<void>;
+
+    /**
+     * @method grantPermissionToGroup
+     * @description Предоставляет разрешение (permission node) группе.
+     */
+    grantPermissionToGroup(
+        guildId: string,
+        groupKey: string,
+        permissionNode: PermissionNode
+    ): Promise<void>;
+
+    /**
+     * @method revokePermissionFromGroup
+     * @description Отзывает разрешение у группы.
+     */
+    revokePermissionFromGroup(
+        guildId: string,
+        groupKey: string,
+        permissionNode: PermissionNode
+    ): Promise<void>;
+
+    /**
+     * @method setGroupInheritance
+     * @description Устанавливает, от каких групп наследуется данная группа.
+     */
+    setGroupInheritance(
+        guildId: string,
+        groupKey: string,
+        inheritsFrom: string[]
+    ): Promise<void>;
 }

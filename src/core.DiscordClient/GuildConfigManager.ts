@@ -1,7 +1,7 @@
 /**
  * @file GuildConfigManager.ts
  * @description Сервис для управления динамической конфигурацией гильдий.
- * Реализует IGuildConfig, используя кэширование и хранение в JSON-файле.
+ * ВЕРСИЯ 3.0: Исправлена критическая ошибка с жизненным циклом и сохранением данных.
  */
 import {
     Injectable,
@@ -11,6 +11,9 @@ import {
 } from "@nestjs/common";
 import { GuildConfigStorage } from "./guild.ConfigManager/GuildConfig.storage";
 import { IGuildConfig, IGuildSettings } from "@interface/IGuildConfig";
+import { GuildConfigPermissionsManager } from "./guild.ConfigManager/GuildConfig.permissions";
+import { PermissionNode } from "@permissions/permissions.dictionary";
+import { IPermissionGroup } from "@interface/IPermissionGroup";
 
 @Injectable()
 export class GuildConfigManager
@@ -20,6 +23,9 @@ export class GuildConfigManager
     private readonly _storage: GuildConfigStorage;
     private _cache: Map<string, IGuildSettings> = new Map();
 
+    // ИЗМЕНЕНИЕ: Объявляем свойство, но не инициализируем его здесь.
+    private _permissions: GuildConfigPermissionsManager;
+
     constructor() {
         this._storage = new GuildConfigStorage();
     }
@@ -28,28 +34,26 @@ export class GuildConfigManager
      * @method onModuleInit
      * @description При инициализации модуля загружаем все конфиги в кэш.
      */
-    async onModuleInit(): Promise<void> {
+    public async onModuleInit(): Promise<void> {
         this._logger.log(
             "Initializing GuildConfigManager and loading configs into cache..."
         );
         this._cache = await this._storage.load();
         this._logger.log(`Loaded ${this._cache.size} guild configurations.`);
+        this._permissions = new GuildConfigPermissionsManager(this._cache, () =>
+            this.save()
+        );
     }
 
-    /**
-     * @method onApplicationShutdown
-     * @description При завершении работы приложения принудительно сохраняем все изменения.
-     */
-    async onApplicationShutdown(signal?: string): Promise<void> {
+    public async onApplicationShutdown(signal?: string): Promise<void> {
         this._logger.log(
             `Application is shutting down (signal: ${signal}). Saving guild configs...`
         );
         await this.save();
     }
 
-    /**
-     * @inheritdoc
-     */
+    // --- Базовые методы ---
+
     public async get<T extends IGuildSettings[keyof IGuildSettings]>(
         guildId: string,
         key: keyof IGuildSettings,
@@ -61,16 +65,10 @@ export class GuildConfigManager
         return value !== undefined ? value : defaultValue;
     }
 
-    /**
-     * @inheritdoc
-     */
     public async getAll(guildId: string): Promise<IGuildSettings | null> {
         return this._cache.get(guildId) ?? null;
     }
 
-    /**
-     * @inheritdoc
-     */
     public async set(
         guildId: string,
         newSettings: Partial<IGuildSettings>
@@ -82,9 +80,6 @@ export class GuildConfigManager
         return updatedSettings;
     }
 
-    /**
-     * @inheritdoc
-     */
     public async save(): Promise<void> {
         try {
             await this._storage.save(this._cache);
@@ -99,13 +94,94 @@ export class GuildConfigManager
         }
     }
 
-    /**
-     * @inheritdoc
-     */
     public async backup(backupName?: string): Promise<string> {
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
         const finalBackupName =
             backupName ?? `guild-configs-${timestamp}.json.bak`;
         return this._storage.backup(finalBackupName);
+    }
+
+    public async getPermissionGroups(
+        guildId: string
+    ): Promise<Record<string, IPermissionGroup> | undefined> {
+        return this._permissions.getPermissionGroups(guildId);
+    }
+
+    public async getPermissionGroup(
+        guildId: string,
+        groupKey: string
+    ): Promise<IPermissionGroup | undefined> {
+        return this._permissions.getPermissionGroup(guildId, groupKey);
+    }
+
+    public async createPermissionGroup(
+        guildId: string,
+        groupKey: string,
+        groupName: string
+    ): Promise<void> {
+        return this._permissions.createPermissionGroup(
+            guildId,
+            groupKey,
+            groupName
+        );
+    }
+
+    public async deletePermissionGroup(
+        guildId: string,
+        groupKey: string
+    ): Promise<void> {
+        return this._permissions.deletePermissionGroup(guildId, groupKey);
+    }
+
+    public async addRoleToGroup(
+        guildId: string,
+        groupKey: string,
+        roleId: string
+    ): Promise<void> {
+        return this._permissions.addRoleToGroup(guildId, groupKey, roleId);
+    }
+
+    public async removeRoleFromGroup(
+        guildId: string,
+        groupKey: string,
+        roleId: string
+    ): Promise<void> {
+        return this._permissions.removeRoleFromGroup(guildId, groupKey, roleId);
+    }
+
+    public async grantPermissionToGroup(
+        guildId: string,
+        groupKey: string,
+        permissionNode: PermissionNode
+    ): Promise<void> {
+        return this._permissions.grantPermissionToGroup(
+            guildId,
+            groupKey,
+            permissionNode
+        );
+    }
+
+    public async revokePermissionFromGroup(
+        guildId: string,
+        groupKey: string,
+        permissionNode: PermissionNode
+    ): Promise<void> {
+        return this._permissions.revokePermissionFromGroup(
+            guildId,
+            groupKey,
+            permissionNode
+        );
+    }
+
+    public async setGroupInheritance(
+        guildId: string,
+        groupKey: string,
+        inheritsFrom: string[]
+    ): Promise<void> {
+        return this._permissions.setGroupInheritance(
+            guildId,
+            groupKey,
+            inheritsFrom
+        );
     }
 }

@@ -1,7 +1,6 @@
 /**
  * @file InteractionLoggerDeleteMessageUser.ts
  * @description Сервис, который слушает событие удаления сообщения и логирует его.
- * ВЕРСИЯ 5.0: Наследует AbstractMessageLogger.
  */
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
@@ -18,11 +17,6 @@ import { IInteractionLoggerChannel } from "../abstractions/IInteractionLoggerCha
 
 @Injectable()
 export class InteractionLoggerDeleteMessageUser extends IInteractionLoggerChannel {
-    /**
-     * @method onMessageDeleted
-     * @description Координирует процесс логирования удаленного сообщения.
-     * @param {MessageDeleteEvent} payload - Данные события.
-     */
     @OnEvent(AppEvents.MESSAGE_DELETED)
     public async onMessageDeleted(payload: MessageDeleteEvent): Promise<void> {
         const { deletedMessage } = payload;
@@ -31,7 +25,8 @@ export class InteractionLoggerDeleteMessageUser extends IInteractionLoggerChanne
             return;
         }
 
-        const logChannelId = await this._guildConfig.get(
+        // ИЗМЕНЕНИЕ: Явно указываем ожидаемый тип <string> для `get`.
+        const logChannelId = await this._guildConfig.get<string>(
             deletedMessage.guildId!,
             "logChannelMessageDeleteId"
         );
@@ -50,13 +45,6 @@ export class InteractionLoggerDeleteMessageUser extends IInteractionLoggerChanne
         await this._sendLog(logChannelId, deletedMessage.guildId!, logEmbed);
     }
 
-    /**
-     * @private
-     * @method _fetchAuthorAndExecutor
-     * @description Получает полные объекты User для автора и исполнителя удаления.
-     * @param {Message | PartialMessage} message - Удаленное сообщение.
-     * @returns {Promise<{author: User | null; executor: User | null}>} Объект с автором и исполнителем.
-     */
     private async _fetchAuthorAndExecutor(
         message: Message | PartialMessage
     ): Promise<{ author: User | null; executor: User | null }> {
@@ -97,15 +85,6 @@ export class InteractionLoggerDeleteMessageUser extends IInteractionLoggerChanne
         return { author, executor };
     }
 
-    /**
-     * @private
-     * @method _createLogEmbed
-     * @description Создает встраиваемое сообщение (embed) для лога.
-     * @param {Message | PartialMessage} message - Удаленное сообщение.
-     * @param {User} author - Автор сообщения.
-     * @param {User} executor - Пользователь, удаливший сообщение.
-     * @returns {EmbedBuilder} Готовый embed.
-     */
     private _createLogEmbed(
         message: Message | PartialMessage,
         author: User,
@@ -115,27 +94,28 @@ export class InteractionLoggerDeleteMessageUser extends IInteractionLoggerChanne
             message.content?.substring(0, 1000) ||
             "Содержимое недоступно (embed или пустое сообщение).";
 
-        return this._embedFactory.createErrorEmbed({
+        return this._embedFactory.create({
             title: "Лог: Удаление сообщения",
+            color: "#e67474",
             description: `Сообщение от пользователя **${author.tag}** было удалено.`,
             fields: [
                 {
-                    name: "👤 Автор сообщения",
+                    name: "Автор сообщения",
                     value: `**Tag:** ${author.tag}\n**ID:** \`${author.id}\``,
                     inline: true,
                 },
                 {
-                    name: "🔥 Кем удалено",
+                    name: "Кем удалено",
                     value: `**Tag:** ${executor.tag}\n**ID:** \`${executor.id}\``,
                     inline: true,
                 },
                 {
-                    name: "📍 Канал",
+                    name: "Канал",
                     value: message.channel.toString(),
                     inline: false,
                 },
                 {
-                    name: "📜 Содержимое",
+                    name: "Содержимое",
                     value: `\`\`\`${content}\`\`\``,
                     inline: false,
                 },

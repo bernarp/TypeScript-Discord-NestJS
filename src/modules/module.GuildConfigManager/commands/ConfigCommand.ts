@@ -1,36 +1,30 @@
 /**
  * @file ConfigCommand.ts
- * @description Команда для управления динамической конфигурацией сервера.
- * @version 4.0: Рефакторинг для упрощения поддержки и добавления новых настроек.
+ * @description Команда для управления базовыми настройками сервера.
+ * @version 5.0: Логика управления правами вынесена в PermissionsCommand.
  */
 import { Inject, Injectable } from "@nestjs/common";
 import {
     SlashCommandBuilder,
     CommandInteraction,
     ChannelType,
-    PermissionFlagsBits,
     TextChannel,
     ChatInputCommandInteraction,
     EmbedField,
+    GuildMember,
 } from "discord.js";
 import { Command } from "@decorators/command.decorator";
 import { ICommand } from "@interface/ICommand";
 import { IGuildConfig, IGuildSettings } from "@interface/IGuildConfig";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
+import { IPermissionService } from "../abstractions/IPermissionService";
+import { Permissions } from "@permissions/permissions.dictionary";
 
-/**
- * @constant CONFIGURABLE_SETTINGS
- * @description Единый источник правды для всех настроек, управляемых этой командой.
- * Чтобы добавить новую настройку, просто добавьте объект в этот массив.
- */
 const CONFIGURABLE_SETTINGS: ReadonlyArray<{
     key: keyof IGuildSettings;
     name: string;
 }> = [
-    {
-        key: "logChannelId",
-        name: "Канал для логов команд",
-    },
+    { key: "logChannelId", name: "Канал для логов команд" },
     {
         key: "logChannelMessageDeleteId",
         name: "Канал логов: Удаление сообщений",
@@ -43,12 +37,7 @@ const CONFIGURABLE_SETTINGS: ReadonlyArray<{
         key: "logChannelMessageSendId",
         name: "Канал логов: Отправка сообщений (СПАМ!)",
     },
-    // Добавьте сюда другие настройки по мере необходимости
-    // Например:
-    // {
-    //   key: "welcomeChannelId",
-    //   name: "Канал для приветствий",
-    // },
+    { key: "welcomeChannelId", name: "Канал для приветствий" },
 ];
 
 @Command()
@@ -56,13 +45,14 @@ const CONFIGURABLE_SETTINGS: ReadonlyArray<{
 export class ConfigCommand implements ICommand {
     public readonly data = new SlashCommandBuilder()
         .setName("config")
-        .setDescription("Управляет настройками бота для этого сервера.")
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDescription(
+            "Управляет базовыми настройками бота для этого сервера."
+        )
         .setDMPermission(false)
         .addSubcommand((subcommand) =>
             subcommand
                 .setName("set")
-                .setDescription("Устанавливает значение для настройки.")
+                .setDescription("Устанавливает значение для настройки канала.")
                 .addStringOption((option) =>
                     option
                         .setName("setting")
@@ -70,11 +60,10 @@ export class ConfigCommand implements ICommand {
                             "Настройка, которую вы хотите изменить."
                         )
                         .setRequired(true)
-                        // Динамически генерируем опции из единого источника
                         .addChoices(
-                            ...CONFIGURABLE_SETTINGS.map((setting) => ({
-                                name: setting.name,
-                                value: setting.key,
+                            ...CONFIGURABLE_SETTINGS.map((s) => ({
+                                name: s.name,
+                                value: s.key,
                             }))
                         )
                 )
@@ -89,27 +78,24 @@ export class ConfigCommand implements ICommand {
         .addSubcommand((subcommand) =>
             subcommand
                 .setName("view")
-                .setDescription("Показывает текущие настройки сервера.")
+                .setDescription("Показывает текущие базовые настройки сервера.")
         );
 
-    /**
-     * @private
-     * @description Карта для быстрого получения имени настройки по её ключу.
-     */
     private readonly _settingNames: Map<keyof IGuildSettings, string>;
 
     constructor(
         @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig,
-        @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory
+        @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
+        @Inject("IPermissionService")
+        private readonly _permissionService: IPermissionService
     ) {
-        // Инициализируем карту имен из единого источника при создании сервиса
         this._settingNames = new Map(
             CONFIGURABLE_SETTINGS.map((s) => [s.key, s.name])
         );
     }
 
     public async execute(interaction: CommandInteraction): Promise<void> {
-        if (!interaction.isChatInputCommand()) return;
+        if (!interaction.isChatInputCommand() || !interaction.inGuild()) return;
 
         const subcommand = interaction.options.getSubcommand();
 
@@ -123,15 +109,23 @@ export class ConfigCommand implements ICommand {
         }
     }
 
-    /**
-     * @private
-     * @method _handleSet
-     * @description Обрабатывает подкоманду /config set
-     * @param {ChatInputCommandInteraction} interaction - Взаимодействие.
-     */
     private async _handleSet(
         interaction: ChatInputCommandInteraction
     ): Promise<void> {
+        if (
+            !(await this._permissionService.check(
+                interaction.member as GuildMember,
+                Permissions.CONFIG_SET
+            ))
+        ) {
+            const errorEmbed = this._embedFactory.createErrorEmbed({
+                description: "У вас недостаточно прав для изменения настроек.",
+                context: { user: interaction.user, guild: interaction.guild },
+            });
+            await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+            return;
+        }
+
         const settingKey = interaction.options.getString(
             "setting",
             true
@@ -150,58 +144,48 @@ export class ConfigCommand implements ICommand {
 
         const embed = this._embedFactory.createSuccessEmbed({
             description: `Настройка **${settingName}** была успешно обновлена!`,
-            fields: [
-                {
-                    name: "Новое значение",
-                    value: channel.toString(),
-                    inline: false,
-                },
-            ],
+            fields: [{ name: "Новое значение", value: channel.toString(), inline: false}],
             context: { user: interaction.user, guild: interaction.guild },
         });
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
     }
 
-    /**
-     * @private
-     * @method _handleView
-     * @description Обрабатывает подкоманду /config view
-     * @param {ChatInputCommandInteraction} interaction - Взаимодействие.
-     */
     private async _handleView(
         interaction: ChatInputCommandInteraction
     ): Promise<void> {
-        const config = await this._guildConfig.getAll(interaction.guildId!);
+        if (
+            !(await this._permissionService.check(
+                interaction.member as GuildMember,
+                Permissions.CONFIG_VIEW
+            ))
+        ) {
+            const errorEmbed = this._embedFactory.createErrorEmbed({
+                description: "У вас недостаточно прав для просмотра настроек.",
+                context: { user: interaction.user, guild: interaction.guild },
+            });
+            await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+            return;
+        }
 
-        // Динамически генерируем поля для встраиваемого сообщения
+        const config = await this._guildConfig.getAll(interaction.guildId!);
         const fields: EmbedField[] = CONFIGURABLE_SETTINGS.map((setting) => {
             const value = config?.[setting.key];
             return {
                 name: `${setting.name} (\`${setting.key}\`)`,
-                value: this._formatValue(value),
+                value: value ? `<#${value}>` : "Не настроен",
                 inline: false,
             };
         });
 
         const embed = this._embedFactory.createInfoEmbed({
-            title: `Настройки для сервера "${interaction.guild?.name}"`,
-            description: "Ниже перечислены текущие значения конфигурации.",
+            title: `Базовые настройки для "${interaction.guild?.name}"`,
+            description:
+                "Ниже перечислены текущие значения конфигурации каналов.",
             fields,
             context: { user: interaction.user, guild: interaction.guild },
         });
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
-    }
-
-    /**
-     * @private
-     * @method _formatValue
-     * @description Форматирует ID канала или другое значение для вывода.
-     * @param {string | undefined} value - ID канала или значение.
-     * @returns {string} Отформатированная строка.
-     */
-    private _formatValue(value?: string): string {
-        return value ? `<#${value}>` : "Не настроен";
     }
 }

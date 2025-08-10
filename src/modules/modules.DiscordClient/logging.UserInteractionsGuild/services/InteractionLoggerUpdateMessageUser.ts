@@ -1,7 +1,6 @@
 /**
  * @file InteractionLoggerUpdateMessageUser.ts
  * @description Сервис, который слушает событие редактирования сообщения и логирует его.
- * ВЕРСИЯ 2.0: Наследует AbstractMessageLogger.
  */
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
@@ -12,11 +11,6 @@ import { IInteractionLoggerChannel } from "../abstractions/IInteractionLoggerCha
 
 @Injectable()
 export class InteractionLoggerUpdateMessageUser extends IInteractionLoggerChannel {
-    /**
-     * @method onMessageUpdated
-     * @description Координирует процесс логирования отредактированного сообщения.
-     * @param {MessageUpdateEvent} payload - Данные события.
-     */
     @OnEvent(AppEvents.MESSAGE_UPDATED)
     public async onMessageUpdated(payload: MessageUpdateEvent): Promise<void> {
         const { oldMessage, newMessage } = payload;
@@ -27,7 +21,7 @@ export class InteractionLoggerUpdateMessageUser extends IInteractionLoggerChanne
             return;
         }
 
-        const logChannelId = await this._guildConfig.get(
+        const logChannelId = await this._guildConfig.get<string>(
             newMessage.guildId!,
             "logChannelMessageEditId"
         );
@@ -39,14 +33,6 @@ export class InteractionLoggerUpdateMessageUser extends IInteractionLoggerChanne
         await this._sendLog(logChannelId, newMessage.guildId!, logEmbed);
     }
 
-    /**
-     * @private
-     * @method _createLogEmbed
-     * @description Создает встраиваемое сообщение (embed) для лога.
-     * @param {Message | PartialMessage} oldMessage - Старое сообщение.
-     * @param {Message | PartialMessage} newMessage - Новое сообщение.
-     * @returns {Promise<EmbedBuilder>} Готовый embed.
-     */
     private async _createLogEmbed(
         oldMessage: Message | PartialMessage,
         newMessage: Message | PartialMessage
@@ -65,22 +51,22 @@ export class InteractionLoggerUpdateMessageUser extends IInteractionLoggerChanne
             description: `Пользователь **${author.tag}** отредактировал сообщение.`,
             fields: [
                 {
-                    name: "👤 Автор",
+                    name: "Автор",
                     value: `**Tag:** ${author.tag}\n**ID:** \`${author.id}\``,
                     inline: true,
                 },
                 {
-                    name: "📍 Канал",
+                    name: "Канал",
                     value: newMessage.channel.toString(),
                     inline: true,
                 },
                 {
-                    name: "📜 Старое содержимое",
+                    name: "Старое содержимое",
                     value: `\`\`\`${oldContent}\`\`\``,
                     inline: false,
                 },
                 {
-                    name: "📝 Новое содержимое",
+                    name: "Новое содержимое",
                     value: `\`\`\`${newContent}\`\`\``,
                     inline: false,
                 },

@@ -1,7 +1,6 @@
 /**
  * @file InteractionLoggerCreateMessageUser.ts
  * @description Сервис, который слушает событие создания сообщения и логирует его.
- * ВЕРСИЯ 2.0: Наследует AbstractMessageLogger.
  */
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
@@ -12,11 +11,6 @@ import { IInteractionLoggerChannel } from "../abstractions/IInteractionLoggerCha
 
 @Injectable()
 export class InteractionLoggerCreateMessageUser extends IInteractionLoggerChannel {
-    /**
-     * @method onMessageCreated
-     * @description Координирует процесс логирования созданного сообщения.
-     * @param {MessageCreateEvent} payload - Данные события.
-     */
     @OnEvent(AppEvents.MESSAGE_CREATED)
     public async onMessageCreated(payload: MessageCreateEvent): Promise<void> {
         const { message } = payload;
@@ -25,7 +19,8 @@ export class InteractionLoggerCreateMessageUser extends IInteractionLoggerChanne
             return;
         }
 
-        const logChannelId = await this._guildConfig.get(
+        // ИЗМЕНЕНИЕ: Явно указываем ожидаемый тип <string> для `get`, чтобы избежать ошибки компиляции.
+        const logChannelId = await this._guildConfig.get<string>(
             message.guildId!,
             "logChannelMessageSendId"
         );
@@ -37,13 +32,6 @@ export class InteractionLoggerCreateMessageUser extends IInteractionLoggerChanne
         await this._sendLog(logChannelId, message.guildId!, logEmbed);
     }
 
-    /**
-     * @private
-     * @method _createLogEmbed
-     * @description Создает встраиваемое сообщение (embed) для лога.
-     * @param {Message} message - Созданное сообщение.
-     * @returns {EmbedBuilder} Готовый embed.
-     */
     private _createLogEmbed(message: Message): EmbedBuilder {
         const author = message.author;
         const content =
@@ -55,17 +43,17 @@ export class InteractionLoggerCreateMessageUser extends IInteractionLoggerChanne
             description: `Пользователь **${author.tag}** отправил сообщение.`,
             fields: [
                 {
-                    name: "👤 Автор",
+                    name: "Автор",
                     value: `**Tag:** ${author.tag}\n**ID:** \`${author.id}\``,
                     inline: true,
                 },
                 {
-                    name: "📍 Канал",
+                    name: "Канал",
                     value: message.channel.toString(),
                     inline: true,
                 },
                 {
-                    name: "📜 Содержимое",
+                    name: "Содержимое",
                     value: `\`\`\`${content}\`\`\``,
                     inline: false,
                 },

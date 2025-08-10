@@ -51,7 +51,8 @@
             ],
             "@utils.Global/*": ["src/utils.Global/*"],
             "@event.EventBus/*": ["src/event.EventBus/*"],
-            "@err/*": ["src/core.DiscordClient/error.HandlerFilter/*"]
+            "@err/*": ["src/core.DiscordClient/error.HandlerFilter/*"],
+            "@permissions/*": ["src/core.DiscordClient/domain/permissions.DiscordClient/*"]
         }
     },
     // "include" - массив путей, которые должны быть включены в компиляцию.
