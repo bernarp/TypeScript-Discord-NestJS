@@ -13,9 +13,9 @@ import {
     Interaction,
     Message,
     MessageReaction,
-    PartialGuildMember, // ИЗМЕНЕНИЕ: Импортируем PartialGuildMember
+    PartialGuildMember,
     PartialMessage,
-    PartialMessageReaction, // ИЗМЕНЕНИЕ: Импортируем PartialMessageReaction
+    PartialMessageReaction,
     PartialUser,
     User,
     Partials,
@@ -171,3 +171,4 @@ export class Client extends BaseClient implements IClient {
         );
     }
 }
+
