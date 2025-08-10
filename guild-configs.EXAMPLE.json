@@ -1,0 +1,49 @@
+{
+    "1074340840681517117": {
+        "logChannelMessageDeleteId": "1234567890123456789",
+        "logChannelMessageEditId": "1234567890123456789",
+        "logChannelMessageSendId": "1234567890123456789",
+        "permissionGroups": {
+            "discordmoderations": {
+                "name": "Младщая администрация",
+                "roleIds": [
+                    "1234567890123456789",
+                    "1234567890123456789",
+                    "1234567890123456789"
+                ],
+                "permissions": [
+                    "permissions.view",
+                    "ticket.delete",
+                    "ticket.close",
+                    "config.view"
+                ],
+                "inherits": []
+            },
+            "menegerdiscord": {
+                "name": "Менеджены",
+                "roleIds": [1234567890123456789],
+                "permissions": [
+                    "config.set",
+                    "permissions.group.grant",
+                    "ticket.remove_user",
+                    "ticket.add_user"
+                ],
+                "inherits": [
+                    "discordmoderations"
+                ]
+            },
+            "owner": {
+                "name": "Высшая",
+                "roleIds": [
+                    "1234567890123456789"
+                ],
+                "permissions": [
+                    "*"
+                ],
+                "inherits": [
+                    "menegerdiscord"
+                ]
+            }
+        }
+    }
+}
