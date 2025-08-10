@@ -72,7 +72,6 @@ export class PermissionGuard implements CanActivate {
             return false;
         }
 
-        // ИЗМЕНЕНИЕ: Выносим логику проверки в отдельный метод для чистоты.
         const hasPermission = await this._checkPermissions(
             member,
             requirements,
@@ -124,7 +123,6 @@ export class PermissionGuard implements CanActivate {
                 if (
                     !(await this._permissionService.check(member, permission))
                 ) {
-                    // Если хотя бы одного права нет, немедленно отказываем в доступе
                     this._logger.debug(
                         `Required permission "${permission}" NOT found for user. Access denied.`,
                         logContext
@@ -136,7 +134,6 @@ export class PermissionGuard implements CanActivate {
                     logContext
                 );
             }
-            // Если цикл завершился, значит все права на месте
             this._logger.debug(
                 `All required permissions found for user. Access granted.`,
                 logContext
@@ -145,3 +142,4 @@ export class PermissionGuard implements CanActivate {
         }
     }
 }
+
