@@ -1,4 +1,5 @@
 // Этот файл автоматически создаётся после использования /config set; или /permissions group create;... 
+// Подробнее о правах смотреть в ...\src\core.DiscordClient\domain\permissions.DiscordClient\permissions.dictionary.ts;
 {
     "id_guild": {
         "logChannelMessageDeleteId": "1234567890123456789",
