@@ -19,7 +19,7 @@ export class InteractionManager {
         this._handlers = [commandHandler];
     }
 
-    @OnEvent("interaction.created")
+    @OnEvent(AppEvents.INTERACTION_CREATED)
     public async onInteractionCreate(
         payload: InteractionCreateEvent<Interaction>
     ): Promise<void> {
@@ -47,3 +47,4 @@ export class InteractionManager {
         );
     }
 }
+
