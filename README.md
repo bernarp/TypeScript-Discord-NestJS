@@ -1,3 +1,4 @@
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white://img.shields.io/badge/NestJS-E0234E?logo=nestjs&d](https://img.shields.io/badge/Discord-5865F2?logo=discord&logottps://img.shields.io/badge/Discord.js-2C2F33?logo=discord&logo
 # Discord Бот на NestJS
 
 ## 1. Введение
