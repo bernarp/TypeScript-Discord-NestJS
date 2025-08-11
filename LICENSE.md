@@ -38,16 +38,34 @@ export const Permissions = {
 
 > **`moderation/services/Moderation.service.ts`**
 > ```typescript
-> @Injectable()
-> export class ModerationService {
->     public async kickMember(member: GuildMember, reason: string): Promise<void> {
->         if (!member.kickable) {
->             throw new Error("Недостаточно прав для кика этого участника.");
->         }
->         await member.kick(reason);
->         // ...логика для аудита
->     }
-> }
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { GuildMember } from "discord.js";
+import { IGuildConfig } from "@interface/IGuildConfig";
+
+@Injectable()
+export class ModerationService {
+    private readonly _logger = new Logger(ModerationService.name);
+
+    constructor(
+        @Inject("IGuildConfig")
+        private readonly _guildConfig: IGuildConfig
+    ) {}
+
+    public async kickMember(member: GuildMember, reason: string): Promise<void> {
+        if (!member.kickable) {
+            throw new Error("Недостаточно прав для кика этого участника.");
+        }
+        await member.kick(reason);
+
+        // Пример использования зависимостей
+        this._logger.log(`Kicked ${member.user.tag} for: ${reason}`);
+        const logChannelId = await this._guildConfig.get<string>(
+            member.guild.id,
+            "logChannelId"
+        );
+        // ...дальнейшая логика отправки лога
+    }
+}
 > ```
 
 ### Шаг 4: Создание команды (Точка входа)
@@ -56,23 +74,36 @@ export const Permissions = {
 
 > **`moderation/commands/Kick.command.ts`**
 > ```typescript
-> @Command()
-> @Injectable()
-> export class KickCommand implements ICommand {
->     public readonly data = new SlashCommandBuilder()
->         .setName("kick")
->         .setDescription("Выгоняет участника с сервера.")
->         .addUserOption(/* ... */);
-> 
->     constructor(private readonly _moderationService: ModerationService) {}
-> 
->     @RequiresPermission(Permissions.MODERATION_KICK)
->     public async execute(interaction: CommandInteraction): Promise<void> {
->         // 1. Получить опции из interaction
->         // 2. Вызвать this._moderationService.kickMember(...)
->         // 3. Ответить пользователю
->     }
-> }
+import { Inject, Injectable } from "@nestjs/common";
+import { SlashCommandBuilder, CommandInteraction } from "discord.js";
+import { Command } from "@decorators/command.decorator";
+import { ICommand } from "@interface/ICommand";
+import { RequiresPermission } from "@decorators/RequiresPermission.decorator";
+import { Permissions } from "@permissions/permissions.dictionary";
+import { ModerationService } from "../services/Moderation.service";
+import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
+
+@Command()
+@Injectable()
+export class KickCommand implements ICommand {
+    public readonly data = new SlashCommandBuilder()
+        .setName("kick")
+        .setDescription("Выгоняет участника с сервера.")
+        .addUserOption(/* ... */);
+
+    constructor(
+        private readonly _moderationService: ModerationService,
+        @Inject("IEmbedFactory")
+        private readonly _embedFactory: IEmbedFactory
+    ) {}
+
+    @RequiresPermission(Permissions.MODERATION_KICK)
+    public async execute(interaction: CommandInteraction): Promise<void> {
+        // 1. Получить опции из interaction
+        // 2. Вызвать this._moderationService.kickMember(...)
+        // 3. Ответить пользователю с помощью this._embedFactory
+    }
+}
 > ```
 
 ### Шаг 5: Сборка модуля
@@ -94,14 +125,20 @@ export const Permissions = {
 
 > **`src/app.module.ts`**
 > ```typescript
-> @Module({
->     imports: [
->         // ...
->         ModerationModule, // <-- Добавить сюда
->     ],
->     // ...
-> })
-> export class AppModule {}
+import { Module } from "@nestjs/common";
+import { CoreModule } from "@/core.module";
+import { GuildConfigModule } from "@modules.DiscordClient/module.GuildConfigManager/config.guild-config-manager.module";
+import { ModerationService } from "./services/Moderation.service";
+import { KickCommand } from "./commands/Kick.command";
+
+@Module({
+    imports: [
+        CoreModule, // Обеспечивает доступ к IEmbedFactory, IConfig и т.д.
+        GuildConfigModule // Обеспечивает доступ к IPermissionService (через Guard)
+    ],
+    providers: [ModerationService, KickCommand],
+})
+export class ModerationModule {}
 > ```
 
 После этих шагов команда `/kick` будет зарегистрирована и готова к работе.
