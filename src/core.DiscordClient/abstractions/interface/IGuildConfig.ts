@@ -18,6 +18,7 @@ export interface IGuildSettings {
     logChannelMessageDeleteId?: string;
     logChannelMessageEditId?: string;
     logChannelMessageSendId?: string;
+    logChannelInteractionId?: string;
     permissionGroups?: Record<string, IPermissionGroup>;
 }
 

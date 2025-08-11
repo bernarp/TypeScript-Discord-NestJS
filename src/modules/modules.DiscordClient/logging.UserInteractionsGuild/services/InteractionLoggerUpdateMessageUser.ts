@@ -1,50 +1,56 @@
 /**
  * @file InteractionLoggerUpdateMessageUser.ts
- * @description Сервис, который слушает событие редактирования сообщения и логирует его.
+ * @description Сервис логирования редактирования сообщений пользователями.
  */
+
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import { Message, PartialMessage, EmbedBuilder } from "discord.js";
+import { Message, PartialMessage, EmbedBuilder, User } from "discord.js";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { MessageUpdateEvent } from "@/event.EventBus/message-update.event";
-import { IInteractionLoggerChannel } from "../abstractions/IInteractionLoggerChannel";
+import { BaseMessageLogger } from "../abstractions/classesAbstract/BaseMessageLogger.abstract";
+import { LogChannelType } from "../abstractions/LogChannelType.enum";
 
 @Injectable()
-export class InteractionLoggerUpdateMessageUser extends IInteractionLoggerChannel {
+export class InteractionLoggerUpdateMessageUser extends BaseMessageLogger {
     @OnEvent(AppEvents.MESSAGE_UPDATED)
     public async onMessageUpdated(payload: MessageUpdateEvent): Promise<void> {
         const { oldMessage, newMessage } = payload;
 
-        if (oldMessage.content === newMessage.content) return;
-
-        if (!this._isLoggable(newMessage)) {
+        if (
+            oldMessage.content === newMessage.content ||
+            !this.isLoggable(newMessage)
+        ) {
             return;
         }
 
-        const logChannelId = await this._guildConfig.get<string>(
+        const logChannelId = await this.getLogChannelId(
             newMessage.guildId!,
-            "logChannelMessageEditId"
+            LogChannelType.MESSAGE_UPDATE
         );
+
         if (!logChannelId) {
             return;
         }
 
-        const logEmbed = await this._createLogEmbed(oldMessage, newMessage);
-        await this._sendLog(logChannelId, newMessage.guildId!, logEmbed);
+        const logEmbed = await this.createLogEmbed(oldMessage, newMessage);
+        await this.sendLog(logChannelId, newMessage.guildId!, logEmbed);
     }
 
-    private async _createLogEmbed(
+    public async createLogEmbed(
         oldMessage: Message | PartialMessage,
-        newMessage: Message | PartialMessage
+        newMessage?: Message | PartialMessage
     ): Promise<EmbedBuilder> {
-        const author = newMessage.author!.partial
+        if (!newMessage) {
+            throw new Error("New message is required for update message log");
+        }
+
+        const author: User = newMessage.author!.partial
             ? await newMessage.author!.fetch()
             : newMessage.author!;
 
-        const oldContent =
-            oldMessage.content?.substring(0, 1000) || "Содержимое недоступно.";
-        const newContent =
-            newMessage.content?.substring(0, 1000) || "Содержимое недоступно.";
+        const oldContent = this.truncateContent(oldMessage.content);
+        const newContent = this.truncateContent(newMessage.content);
 
         return this._embedFactory.createInfoEmbed({
             title: "Лог: Редактирование сообщения",

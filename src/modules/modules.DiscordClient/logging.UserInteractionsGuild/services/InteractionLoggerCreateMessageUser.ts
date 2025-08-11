@@ -1,41 +1,41 @@
 /**
  * @file InteractionLoggerCreateMessageUser.ts
- * @description Сервис, который слушает событие создания сообщения и логирует его.
+ * @description Сервис логирования создания сообщений пользователями.
  */
+
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import { Message, EmbedBuilder } from "discord.js";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { MessageCreateEvent } from "@/event.EventBus/message-create.event";
-import { IInteractionLoggerChannel } from "../abstractions/IInteractionLoggerChannel";
-
+import { BaseMessageLogger } from "../abstractions/classesAbstract/BaseMessageLogger.abstract";
+import { LogChannelType } from "../abstractions/LogChannelType.enum";
 @Injectable()
-export class InteractionLoggerCreateMessageUser extends IInteractionLoggerChannel {
-    
+export class InteractionLoggerCreateMessageUser extends BaseMessageLogger {
     @OnEvent(AppEvents.MESSAGE_CREATED)
     public async onMessageCreated(payload: MessageCreateEvent): Promise<void> {
         const { message } = payload;
 
-        if (!this._isLoggable(message)) {
+        if (!this.isLoggable(message)) {
             return;
         }
-        const logChannelId = await this._guildConfig.get<string>(
+
+        const logChannelId = await this.getLogChannelId(
             message.guildId!,
-            "logChannelMessageSendId"
+            LogChannelType.MESSAGE_CREATE
         );
+
         if (!logChannelId) {
             return;
         }
 
-        const logEmbed = this._createLogEmbed(message);
-        await this._sendLog(logChannelId, message.guildId!, logEmbed);
+        const logEmbed = this.createLogEmbed(message);
+        await this.sendLog(logChannelId, message.guildId!, logEmbed);
     }
 
-    private _createLogEmbed(message: Message): EmbedBuilder {
+    public createLogEmbed(message: Message): EmbedBuilder {
         const author = message.author;
-        const content =
-            message.content?.substring(0, 1000) ||
-            "Содержимое недоступно (embed или пустое сообщение).";
+        const content = this.truncateContent(message.content);
 
         return this._embedFactory.createInfoEmbed({
             title: "Лог: Отправка сообщения",

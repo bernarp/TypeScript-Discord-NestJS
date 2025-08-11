@@ -9,6 +9,7 @@ import { Interaction } from "discord.js";
 import { InteractionCreateEvent } from "@event.EventBus/interaction-create.eventv2";
 import { IInteractionHandler } from "@interface/IInteractionHandler";
 import { CommandHandler } from "./components.DiscordInteractions/Command.handler";
+import { AppEvents } from "@/event.EventBus/app.events";
 
 @Injectable()
 export class InteractionManager {
@@ -47,4 +48,3 @@ export class InteractionManager {
         );
     }
 }
-

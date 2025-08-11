@@ -1,7 +1,8 @@
 /**
  * @file InteractionLoggerDeleteMessageUser.ts
- * @description Сервис, который слушает событие удаления сообщения и логирует его.
+ * @description Сервис логирования удаления сообщений пользователями.
  */
+
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import {
@@ -13,86 +14,56 @@ import {
 } from "discord.js";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { MessageDeleteEvent } from "@/event.EventBus/message-delete.event";
-import { IInteractionLoggerChannel } from "../abstractions/IInteractionLoggerChannel";
+import { BaseMessageLogger } from "../abstractions/classesAbstract/BaseMessageLogger.abstract";
+import { LogChannelType } from "../abstractions/LogChannelType.enum";
 
 @Injectable()
-export class InteractionLoggerDeleteMessageUser extends IInteractionLoggerChannel {
+export class InteractionLoggerDeleteMessageUser extends BaseMessageLogger {
     @OnEvent(AppEvents.MESSAGE_DELETED)
     public async onMessageDeleted(payload: MessageDeleteEvent): Promise<void> {
         const { deletedMessage } = payload;
 
-        if (!this._isLoggable(deletedMessage)) {
+        if (!this.isLoggable(deletedMessage)) {
             return;
         }
 
-        // ИЗМЕНЕНИЕ: Явно указываем ожидаемый тип <string> для `get`.
-        const logChannelId = await this._guildConfig.get<string>(
+        const logChannelId = await this.getLogChannelId(
             deletedMessage.guildId!,
-            "logChannelMessageDeleteId"
+            LogChannelType.MESSAGE_DELETE
         );
+
         if (!logChannelId) {
             return;
         }
 
-        const { author, executor } = await this._fetchAuthorAndExecutor(
+        const { author, executor } = await this.fetchAuthorAndExecutor(
             deletedMessage
         );
+
         if (!author || !executor) {
             return;
         }
 
-        const logEmbed = this._createLogEmbed(deletedMessage, author, executor);
-        await this._sendLog(logChannelId, deletedMessage.guildId!, logEmbed);
+        const logEmbed = await this.createLogEmbed(
+            deletedMessage,
+            author,
+            executor
+        );
+        await this.sendLog(logChannelId, deletedMessage.guildId!, logEmbed);
     }
 
-    private async _fetchAuthorAndExecutor(
-        message: Message | PartialMessage
-    ): Promise<{ author: User | null; executor: User | null }> {
-        let author: User | null = null;
-        if (message.author) {
-            author = message.author.partial
-                ? await message.author.fetch()
-                : message.author;
-        }
-        if (!author) return { author: null, executor: null };
-
-        let executor: User | null = author;
-        if (message.guild) {
-            try {
-                const auditLogs = await message.guild.fetchAuditLogs({
-                    type: AuditLogEvent.MessageDelete,
-                    limit: 5,
-                });
-
-                const deleteLog = auditLogs.entries.find(
-                    (log) =>
-                        log.target.id === author?.id &&
-                        Date.now() - log.createdTimestamp < 5000
-                );
-                if (deleteLog?.executor) {
-                    executor = await this._client.users.fetch(
-                        deleteLog.executor.id
-                    );
-                }
-            } catch (error) {
-                this._logger.warn(
-                    `Could not fetch audit logs for guild ${message.guildId}:`,
-                    error
-                );
-            }
-        }
-
-        return { author, executor };
-    }
-
-    private _createLogEmbed(
+    public createLogEmbed(
         message: Message | PartialMessage,
-        author: User,
-        executor: User
+        author?: User,
+        executor?: User
     ): EmbedBuilder {
-        const content =
-            message.content?.substring(0, 1000) ||
-            "Содержимое недоступно (embed или пустое сообщение).";
+        if (!author || !executor) {
+            throw new Error(
+                "Author and executor are required for delete message log"
+            );
+        }
+
+        const content = this.truncateContent(message.content);
 
         return this._embedFactory.create({
             title: "Лог: Удаление сообщения",
@@ -122,5 +93,56 @@ export class InteractionLoggerDeleteMessageUser extends IInteractionLoggerChanne
             ],
             context: { user: author, guild: message.guild! },
         });
+    }
+
+    /**
+     * @private
+     * @method fetchAuthorAndExecutor
+     * @description Получает автора сообщения и исполнителя удаления.
+     */
+    private async fetchAuthorAndExecutor(
+        message: Message | PartialMessage
+    ): Promise<{ author: User | null; executor: User | null }> {
+        let author: User | null = null;
+
+        if (message.author) {
+            author = message.author.partial
+                ? await message.author.fetch()
+                : message.author;
+        }
+
+        if (!author) {
+            return { author: null, executor: null };
+        }
+
+        let executor: User | null = author;
+
+        if (message.guild) {
+            try {
+                const auditLogs = await message.guild.fetchAuditLogs({
+                    type: AuditLogEvent.MessageDelete,
+                    limit: 5,
+                });
+
+                const deleteLog = auditLogs.entries.find(
+                    (log) =>
+                        log.target.id === author?.id &&
+                        Date.now() - log.createdTimestamp < 5000
+                );
+
+                if (deleteLog?.executor) {
+                    executor = await this._client.users.fetch(
+                        deleteLog.executor.id
+                    );
+                }
+            } catch (error) {
+                this._logger.warn(
+                    `Could not fetch audit logs for guild ${message.guildId}:`,
+                    error
+                );
+            }
+        }
+
+        return { author, executor };
     }
 }

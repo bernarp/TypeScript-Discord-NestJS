@@ -124,7 +124,7 @@ export class Client extends BaseClient implements IClient {
 
     private _onInteractionCreate(interaction: Interaction): void {
         this._eventEmitter.emit(
-            "interaction.created",
+            AppEvents.INTERACTION_CREATED,
             new InteractionCreateEvent(interaction)
         );
     }

@@ -37,6 +37,10 @@ const CONFIGURABLE_SETTINGS: ReadonlyArray<{
         key: "logChannelMessageSendId",
         name: "Канал логов: Отправка сообщений (СПАМ!)",
     },
+    {
+        key: "logChannelInteractionId",
+        name: "Канал логов: InteractionCreate",
+    },
     { key: "welcomeChannelId", name: "Канал для приветствий" },
 ];
 

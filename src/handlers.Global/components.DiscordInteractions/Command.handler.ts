@@ -58,7 +58,6 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
                 this._logger.debug(
                     `Emitting event for command "${interaction.commandName}" execution.`
                 );
-                // ИЗМЕНЕНИЕ: Указываем конкретный тип в дженерике
                 this._eventEmitter.emit(
                     AppEvents.INTERACTION_CREATED_COMMAND,
                     new InteractionCreateEvent<ChatInputCommandInteraction>(
