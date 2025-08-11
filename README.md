@@ -1,4 +1,6 @@
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white://img.shields.io/badge/NestJS-E0234E?logo=nestjs&d](https://img.shields.io/badge/Discord-5865F2?logo=discord&logottps://img.shields.io/badge/Discord.js-2C2F33?logo=discord&logo
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white)
+![Discord.js](https://img.shields.io/badge/Discord.js-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)
 # Discord Бот на NestJS
 
 ## 1. Введение
