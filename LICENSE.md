@@ -39,9 +39,10 @@ export const Permissions = {
 > import { Inject, Injectable, Logger } from "@nestjs/common";
 > import { GuildMember } from "discord.js";
 > import { IGuildConfig } from "@interface/IGuildConfig";
-> 
+> import { Service } from "@core/abstractions/Service";
+
 > @Injectable()
-> export class ModerationService {
+> export class ModerationService extends Service {
 >     private readonly _logger = new Logger(ModerationService.name);
 > 
 >     constructor(
