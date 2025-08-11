@@ -5,8 +5,7 @@
  */
 
 import { Injectable } from "@nestjs/common";
-// ИЗМЕНЕНИЕ: Используем относительный путь для импорта интерфейса.
-import { IConfig } from "./abstractions/interface/IConfig";
+import { IConfig } from "@interface/IConfig";
 import * as dotenv from "dotenv";
 import * as path from "path";
 
@@ -78,3 +77,4 @@ export class ConfigManager implements IConfig {
         return this._config.hasOwnProperty(key);
     }
 }
+
