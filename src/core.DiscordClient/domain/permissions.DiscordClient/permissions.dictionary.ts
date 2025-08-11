@@ -140,6 +140,98 @@ export const Permissions = {
      * @description Позволяет настраивать выдачу ролей по реакции на сообщение.
      */
     ROLES_MANAGE_REACTION: "roles.manage.reaction",
+
+    // --- Система XP и уровней ---
+    /**
+     * @permission xp.view
+     * @description Позволяет просматривать XP и уровень пользователей.
+     */
+    XP_VIEW: "xp.view",
+    /**
+     * @permission xp.modify
+     * @description Позволяет изменять количество XP у пользователей.
+     */
+    XP_MODIFY: "xp.modify",
+    /**
+     * @permission xp.reset
+     * @description Позволяет сбрасывать XP пользователя к нулю.
+     */
+    XP_RESET: "xp.reset",
+    /**
+     * @permission xp.leaderboard
+     * @description Позволяет просматривать таблицу лидеров по XP.
+     */
+    XP_LEADERBOARD: "xp.leaderboard",
+    /**
+     * @permission xp.configure
+     * @description Позволяет настраивать систему XP (множители, исключения и т.д.).
+     */
+    XP_CONFIGURE: "xp.configure",
+    /**
+     * @permission xp.import_export
+     * @description Позволяет импортировать/экспортировать данные XP.
+     */
+    XP_IMPORT_EXPORT: "xp.import_export",
+
+    // --- Управление каналами ---
+    /**
+     * @permission channels.create
+     * @description Позволяет создавать новые каналы.
+     */
+    CHANNELS_CREATE: "channels.create",
+    /**
+     * @permission channels.delete
+     * @description Позволяет удалять каналы.
+     */
+    CHANNELS_DELETE: "channels.delete",
+    /**
+     * @permission channels.modify
+     * @description Позволяет изменять настройки каналов (название, описание, права).
+     */
+    CHANNELS_MODIFY: "channels.modify",
+    /**
+     * @permission channels.temporary
+     * @description Позволяет создавать и управлять временными каналами.
+     */
+    CHANNELS_TEMPORARY: "channels.temporary",
+    /**
+     * @permission channels.clone
+     * @description Позволяет клонировать существующие каналы.
+     */
+    CHANNELS_CLONE: "channels.clone",
+
+    // --- Система статистики ---
+    /**
+     * @permission stats.view
+     * @description Позволяет просматривать статистику сервера и активности.
+     */
+    STATS_VIEW: "stats.view",
+    /**
+     * @permission stats.export
+     * @description Позволяет экспортировать статистические данные.
+     */
+    STATS_EXPORT: "stats.export",
+    /**
+     * @permission stats.reset
+     * @description Позволяет сбрасывать статистику.
+     */
+    STATS_RESET: "stats.reset",
+
+    /**
+     * @permission reports.handle
+     * @description Позволяет обрабатывать поступившие жалобы.
+     */
+    REPORTS_HANDLE: "reports.handle",
+    /**
+     * @permission reports.view_all
+     * @description Позволяет просматривать все жалобы на сервере.
+     */
+    REPORTS_VIEW_ALL: "reports.view_all",
+    /**
+     * @permission reports.close
+     * @description Позволяет закрывать обработанные жалобы.
+     */
+    REPORTS_CLOSE: "reports.close",
 } as const;
 
 /**
