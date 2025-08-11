@@ -133,7 +133,7 @@ export const Permissions = {
 > ```typescript
 > import { Module } from "@nestjs/common";
 > // ... другие импорты
-> import { ModerationModule } from './modules/modules.DiscordClient/moderation/moderation.module';
+> import { ModerationModule } from '@modules.DiscordClient/moderation/moderation.module';
 > 
 > @Module({
 >     imports: [
