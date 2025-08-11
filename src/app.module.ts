@@ -4,7 +4,7 @@
  */
 
 import { Module } from "@nestjs/common";
-import { Client } from "@core/Client";
+import { Client } from "@core/Clientv2";
 import { CoreModule } from "@/core.module";
 import { ExampleModule } from "@modules.DiscordClient/example/example.module";
 import { HandlersModule as registerModule } from "./handlers.Global/handlers.module";

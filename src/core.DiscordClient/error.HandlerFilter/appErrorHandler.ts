@@ -1,7 +1,7 @@
 /**
  * @file discord-exception.filter.ts
  * @description Глобальный фильтр для перехвата всех необработанных исключений.
- * ВЕРСИЯ 2.0: Использует ErrorLoggerService.
+ * ВЕРСИЯ 2.0: Использует ErrorLoggerService. Без отправки Embed.
  */
 import {
     ArgumentsHost,

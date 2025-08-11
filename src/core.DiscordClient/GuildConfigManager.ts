@@ -22,8 +22,6 @@ export class GuildConfigManager
     private readonly _logger = new Logger(GuildConfigManager.name);
     private readonly _storage: GuildConfigStorage;
     private _cache: Map<string, IGuildSettings> = new Map();
-
-    // ИЗМЕНЕНИЕ: Объявляем свойство, но не инициализируем его здесь.
     private _permissions: GuildConfigPermissionsManager;
 
     constructor() {

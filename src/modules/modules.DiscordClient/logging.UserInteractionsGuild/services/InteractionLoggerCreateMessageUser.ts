@@ -11,6 +11,7 @@ import { IInteractionLoggerChannel } from "../abstractions/IInteractionLoggerCha
 
 @Injectable()
 export class InteractionLoggerCreateMessageUser extends IInteractionLoggerChannel {
+    
     @OnEvent(AppEvents.MESSAGE_CREATED)
     public async onMessageCreated(payload: MessageCreateEvent): Promise<void> {
         const { message } = payload;
@@ -18,8 +19,6 @@ export class InteractionLoggerCreateMessageUser extends IInteractionLoggerChanne
         if (!this._isLoggable(message)) {
             return;
         }
-
-        // ИЗМЕНЕНИЕ: Явно указываем ожидаемый тип <string> для `get`, чтобы избежать ошибки компиляции.
         const logChannelId = await this._guildConfig.get<string>(
             message.guildId!,
             "logChannelMessageSendId"

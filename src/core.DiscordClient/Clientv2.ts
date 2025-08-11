@@ -3,7 +3,6 @@
  * @description Реализация основного клиента Discord. Транслирует "сырые" события
  * от discord.js во внутреннюю шину событий приложения.
  * ВЕРСИЯ 2.1: Исправлены ошибки типизации для событий.
- * ЭТОТ КЛИЕНТ ФАЙЛ ЯВЛЯЕТСЯ ТЕСТОВЫМ.
  */
 import {
     Client as BaseClient,
@@ -125,7 +124,7 @@ export class Client extends BaseClient implements IClient {
 
     private _onInteractionCreate(interaction: Interaction): void {
         this._eventEmitter.emit(
-            AppEvents.INTERACTION_CREATED,
+            "interaction.created",
             new InteractionCreateEvent(interaction)
         );
     }
@@ -136,7 +135,6 @@ export class Client extends BaseClient implements IClient {
             new GuildMemberAddEvent(member)
         );
     }
-
     private _onGuildMemberRemove(
         member: GuildMember | PartialGuildMember
     ): void {
@@ -170,6 +168,3 @@ export class Client extends BaseClient implements IClient {
         );
     }
 }
-
-
-

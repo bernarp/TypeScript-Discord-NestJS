@@ -5,7 +5,7 @@
  */
 import { Global, Module } from "@nestjs/common";
 import { ConfigManager } from "@core/ConfigManager";
-import { Client } from "@core/Client";
+import { Client } from "@core/Clientv2";
 import { EmbedFactory } from "./utils.Global/EmbedFactory";
 import { ErrorLoggerService } from "@err/services/ErrorLoggerService";
 import { GuildConfigManager } from "./core.DiscordClient/GuildConfigManager";

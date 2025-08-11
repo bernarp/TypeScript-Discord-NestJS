@@ -16,7 +16,7 @@ import { IPermissionService } from "@/modules/module.GuildConfigManager/abstract
 import {
     PERMISSIONS_METADATA_KEY,
     PermissionRequirements,
-} from "@decorators/RequiresPermission.decorator";
+} from "@decorators/requiresPermission.decorator";
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
@@ -99,7 +99,6 @@ export class PermissionGuard implements CanActivate {
         logContext: Record<string, string>
     ): Promise<boolean> {
         if (requirements.logic === "OR") {
-            // Логика "ИЛИ": достаточно одного совпадения
             for (const permission of requirements.permissions) {
                 this._logger.debug(
                     `Checking for permission: "${permission}"...`,
@@ -142,4 +141,3 @@ export class PermissionGuard implements CanActivate {
         }
     }
 }
-

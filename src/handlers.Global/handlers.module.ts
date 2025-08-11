@@ -1,22 +1,22 @@
 /**
  * @file handlers.module.ts
- * @description Динамический модуль для регистрации обработчиков команд.
+ * @description Модуль, регистрирующий диспетчер взаимодействий и его компоненты.
  */
 import { DynamicModule, Module } from "@nestjs/common";
+import { InteractionManager } from "./InteractionManager";
+import { CommandHandler } from "./components.DiscordInteractions/Command.handler";
 import { DiscoveryModule } from "@nestjs/core";
-import { CommandHandlerService } from "./CommandManager";
 
-@Module({})
+@Module({
+    imports: [DiscoveryModule],
+})
 export class HandlersModule {
-    /**
-     * @description Конфигурирует модуль, импортируя модули, которые предоставляют команды.
-     */
-    public static register(options: { imports: any[] }): DynamicModule {
+    static register(options: { imports: any[] }): DynamicModule {
         return {
             module: HandlersModule,
-            imports: [DiscoveryModule, ...options.imports],
-            providers: [CommandHandlerService],
-            exports: [CommandHandlerService],
+            imports: [...options.imports],
+            providers: [InteractionManager, CommandHandler],
+            exports: [],
         };
     }
 }
