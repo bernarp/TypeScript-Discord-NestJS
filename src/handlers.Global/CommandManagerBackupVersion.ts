@@ -1,6 +1,6 @@
 /**
  * @file CommandHandler.ts
- * @description Главный сервис, который находит, регистрирует и выполняет команды.
+ * @description Главный сервис, который находит, регистрирует и выполняет команды. OLD
  */
 import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { DiscoveryService, Reflector } from "@nestjs/core";
@@ -127,3 +127,4 @@ export class CommandHandlerService implements OnModuleInit {
         }
     }
 }
+
