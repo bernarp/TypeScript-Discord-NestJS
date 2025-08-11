@@ -25,7 +25,6 @@ export class CommandHandlerService implements OnModuleInit {
     public async onModuleInit(): Promise<void> {
         this._loadCommands();
 
-        // Ждем, пока клиент будет готов, прежде чем регистрировать команды
         if (this._client.isReady()) {
             await this._setupAndRegisterCommands();
         } else {
@@ -75,7 +74,6 @@ export class CommandHandlerService implements OnModuleInit {
     }
 
     private async _registerCommands(): Promise<void> {
-        // Адаптируем под ваш IConfig
         const guildId = this._config.get<string>("GUILD_ID");
         if (!guildId) {
             this._logger.error(
@@ -127,4 +125,5 @@ export class CommandHandlerService implements OnModuleInit {
         }
     }
 }
+
 
