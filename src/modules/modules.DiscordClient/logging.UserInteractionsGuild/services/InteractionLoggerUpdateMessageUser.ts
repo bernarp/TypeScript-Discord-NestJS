@@ -17,6 +17,7 @@ export class InteractionLoggerUpdateMessageUser extends BaseMessageLogger {
     public async onMessageUpdated(payload: MessageUpdateEvent): Promise<void> {
         const { oldMessage, newMessage } = payload;
 
+        // Не логируем, если контент не изменился или сообщение не соответствует критериям
         if (
             oldMessage.content === newMessage.content ||
             !this.isLoggable(newMessage)
@@ -39,15 +40,22 @@ export class InteractionLoggerUpdateMessageUser extends BaseMessageLogger {
 
     public async createLogEmbed(
         oldMessage: Message | PartialMessage,
-        newMessage?: Message | PartialMessage
+        newMessage: Message | PartialMessage
     ): Promise<EmbedBuilder> {
-        if (!newMessage) {
-            throw new Error("New message is required for update message log");
+        let author: User | null = newMessage.author;
+        if (author?.partial) {
+            try {
+                author = await author.fetch();
+            } catch {
+                // Если не удалось получить автора, прерываем создание лога
+                throw new Error(
+                    "Could not fetch partial author for message update log."
+                );
+            }
         }
-
-        const author: User = newMessage.author!.partial
-            ? await newMessage.author!.fetch()
-            : newMessage.author!;
+        if (!author) {
+            throw new Error("Author is null for message update log.");
+        }
 
         const oldContent = this.truncateContent(oldMessage.content);
         const newContent = this.truncateContent(newMessage.content);

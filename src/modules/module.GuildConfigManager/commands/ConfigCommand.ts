@@ -1,7 +1,7 @@
 /**
  * @file ConfigCommand.ts
  * @description Команда для управления базовыми настройками сервера.
- * @version 5.0: Логика управления правами вынесена в PermissionsCommand.
+ * @version 6.0: Полный рефакторинг для использования IConfigurationService.
  */
 import { Inject, Injectable } from "@nestjs/common";
 import {
@@ -15,10 +15,11 @@ import {
 } from "discord.js";
 import { Command } from "@decorators/command.decorator";
 import { ICommand } from "@interface/ICommand";
-import { IGuildConfig, IGuildSettings } from "@interface/IGuildConfig";
+import { IGuildSettings } from "@type/IGuildSettings";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionService } from "../abstractions/IPermissionService";
 import { Permissions } from "@permissions/permissions.dictionary";
+import { IConfigurationService } from "@interface/IConfigurationService";
 
 const CONFIGURABLE_SETTINGS: ReadonlyArray<{
     key: keyof IGuildSettings;
@@ -88,7 +89,8 @@ export class ConfigCommand implements ICommand {
     private readonly _settingNames: Map<keyof IGuildSettings, string>;
 
     constructor(
-        @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig,
+        @Inject("IConfigurationService")
+        private readonly _configService: IConfigurationService,
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
         @Inject("IPermissionService")
         private readonly _permissionService: IPermissionService
@@ -139,7 +141,7 @@ export class ConfigCommand implements ICommand {
             true
         ) as TextChannel;
 
-        await this._guildConfig.set(interaction.guildId!, {
+        await this._configService.setGuildSettings(interaction.guildId!, {
             [settingKey]: channel.id,
         });
 
@@ -178,12 +180,14 @@ export class ConfigCommand implements ICommand {
             return;
         }
 
-        const config = await this._guildConfig.getAll(interaction.guildId!);
+        const config = await this._configService.getAllGuildSettings(
+            interaction.guildId!
+        );
         const fields: EmbedField[] = CONFIGURABLE_SETTINGS.map((setting) => {
             const value = config?.[setting.key];
             return {
                 name: `${setting.name} (\`${setting.key}\`)`,
-                value: value ? `<#${value}>` : "Не настроен",
+                value: value ? `<#${value}>` : "Не настроено",
                 inline: false,
             };
         });

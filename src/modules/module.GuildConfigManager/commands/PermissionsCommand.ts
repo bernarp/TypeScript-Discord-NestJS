@@ -1,7 +1,7 @@
 /**
  * @file PermissionsCommand.ts
  * @description Команда для управления системой прав доступа.
- * ВЕРСИЯ 5.1: Добавлена подкоманда set-inheritance для управления наследованием.
+ * @version 6.0: Полный рефакторинг для использования IConfigurationService.
  */
 import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import {
@@ -24,10 +24,10 @@ import { GroupDeleteHandler } from "../services/components.PermissionsService/Gr
 import { GroupAssignRoleHandler } from "../services/components.PermissionsService/GroupAssignRole.handler";
 import { GroupGrantHandler } from "../services/components.PermissionsService/GroupGrant.handler";
 import { GroupRevokeHandler } from "../services/components.PermissionsService/GroupRevoke.handler";
-import { IGuildConfig } from "@interface/IGuildConfig";
 import { AutocompleteHandler } from "../services/components.PermissionsService/Autocomplete.handler";
 import { IPermissionService } from "../abstractions/IPermissionService";
 import { GroupSetInheritanceHandler } from "../services/components.PermissionsService/GroupSetInheritance.handler";
+import { IConfigurationService } from "@interface/IConfigurationService";
 
 @Command()
 @Injectable()
@@ -161,7 +161,6 @@ export class PermissionsCommand implements ICommand, OnModuleInit {
                                     "Системные имена групп-родителей через запятую."
                                 )
                                 .setRequired(false)
-                                .setAutocomplete(true)
                         )
                 )
         )
@@ -189,10 +188,11 @@ export class PermissionsCommand implements ICommand, OnModuleInit {
     constructor(
         @Inject("IEmbedFactory")
         private readonly _embedFactory: IEmbedFactory,
-        @Inject("IGuildConfig")
-        private readonly _guildConfig: IGuildConfig,
+        @Inject("IConfigurationService")
+        private readonly _configService: IConfigurationService,
         @Inject("IPermissionService")
         private readonly _permissionService: IPermissionService,
+        // Handlers are injected by NestJS DI
         private readonly _groupCreateHandler: GroupCreateHandler,
         private readonly _groupDeleteHandler: GroupDeleteHandler,
         private readonly _groupAssignRoleHandler: GroupAssignRoleHandler,
@@ -271,7 +271,7 @@ export class PermissionsCommand implements ICommand, OnModuleInit {
     private async _handleView(
         interaction: ChatInputCommandInteraction
     ): Promise<void> {
-        const groups = await this._guildConfig.getPermissionGroups(
+        const groups = await this._configService.getPermissionGroups(
             interaction.guildId!
         );
 

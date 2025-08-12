@@ -1,10 +1,10 @@
 /**
  * @file GroupGrant.handler.ts
  * @description Обработчик для выдачи разрешения группе.
+ * @version 2.0: Рефакторинг для использования IConfigurationService.
  */
-import { Inject, Injectable } from "@nestjs/common"; // ИЗМЕНЕНИЕ: Добавлен Injectable
+import { Inject, Injectable } from "@nestjs/common";
 import { ChatInputCommandInteraction } from "discord.js";
-import { IGuildConfig } from "@interface/IGuildConfig";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionSubcommandHandler } from "../../abstractions/IPermissionSubcommandHandler";
 import { IPermissionService } from "../../abstractions/IPermissionService";
@@ -12,11 +12,13 @@ import {
     Permissions,
     PermissionNode,
 } from "@permissions/permissions.dictionary";
+import { IConfigurationService } from "@interface/IConfigurationService";
 
 @Injectable()
 export class GroupGrantHandler implements IPermissionSubcommandHandler {
     constructor(
-        @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig,
+        @Inject("IConfigurationService")
+        private readonly _configService: IConfigurationService,
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
         @Inject("IPermissionService")
         private readonly _permissionService: IPermissionService
@@ -25,6 +27,8 @@ export class GroupGrantHandler implements IPermissionSubcommandHandler {
     public async execute(
         interaction: ChatInputCommandInteraction
     ): Promise<void> {
+        if (!interaction.inGuild()) return;
+
         const groupKey = interaction.options.getString("group_key", true);
         const permission = interaction.options.getString(
             "permission",
@@ -41,13 +45,13 @@ export class GroupGrantHandler implements IPermissionSubcommandHandler {
         }
 
         try {
-            await this._guildConfig.grantPermissionToGroup(
-                interaction.guildId!,
+            await this._configService.grantPermissionToGroup(
+                interaction.guildId,
                 groupKey,
                 permission
             );
 
-            this._permissionService.invalidateCache(interaction.guildId!);
+            this._permissionService.invalidateCache(interaction.guildId);
 
             const successEmbed = this._embedFactory.createSuccessEmbed({
                 description: `Разрешение \`${permission}\` было успешно выдано группе \`${groupKey}\`.`,

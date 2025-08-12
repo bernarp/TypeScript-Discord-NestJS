@@ -4,7 +4,7 @@
  */
 
 import { BaseInteraction, EmbedBuilder } from "discord.js";
-import { InteractionCreateEvent } from "@event.EventBus/interaction-create.event";
+import { InteractionCreateEvent } from "@event.EventBus/interaction-create.eventv2";
 
 export interface IInteractionLogger {
     /**

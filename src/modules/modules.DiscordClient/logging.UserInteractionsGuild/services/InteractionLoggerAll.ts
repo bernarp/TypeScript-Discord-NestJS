@@ -5,8 +5,16 @@
 
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import { EmbedBuilder, BaseInteraction, InteractionType } from "discord.js";
-import { InteractionCreateEvent } from "@event.EventBus/interaction-create.event";
+import {
+    EmbedBuilder,
+    BaseInteraction,
+    InteractionType,
+    ChatInputCommandInteraction,
+    ButtonInteraction,
+    ModalSubmitInteraction,
+    AnySelectMenuInteraction,
+} from "discord.js";
+import { InteractionCreateEvent } from "@event.EventBus/interaction-create.eventv2";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { BaseInteractionLogger } from "../abstractions/classesAbstract/BaseInteractionLogger.abstract";
 import { LogChannelType } from "../abstractions/LogChannelType.enum";
@@ -37,60 +45,21 @@ export class InteractionLoggerAll extends BaseInteractionLogger {
     }
 
     public createLogEmbed(interaction: BaseInteraction): EmbedBuilder {
-        const { user, guild, channel } = interaction;
-        const description = `Пользователь **${user.tag}** инициировал взаимодействие.`;
+        const { user, guild } = interaction;
 
         const embed = this._embedFactory.createInfoEmbed({
             title: "Лог: Новое взаимодействие",
-            description: description,
+            description: `Пользователь **${user.tag}** инициировал взаимодействие.`,
             context: { user, guild },
         });
 
-        const interactionData = this.buildInteractionData(interaction);
-        this.addBasicFields(embed, interaction);
-        this.addSpecificFields(embed, interaction, interactionData);
-        this.addJsonField(embed, interactionData);
+        this._addBasicFields(embed, interaction);
+        this._addSpecificFields(embed, interaction);
 
         return embed;
     }
 
-    /**
-     * @private
-     * @method buildInteractionData
-     * @description Строит базовый объект данных взаимодействия.
-     */
-    private buildInteractionData(
-        interaction: BaseInteraction
-    ): Record<string, any> {
-        const { user, guild, channel } = interaction;
-
-        return {
-            id: interaction.id,
-            type: InteractionType[interaction.type],
-            user: {
-                id: user.id,
-                tag: user.tag,
-                username: user.username,
-            },
-            guild: {
-                id: guild?.id,
-                name: guild?.name,
-            },
-            channel: {
-                id: channel?.id,
-                name: channel && "name" in channel ? channel.name : "Unknown",
-                type: channel?.type,
-            },
-            createdTimestamp: interaction.createdTimestamp,
-        };
-    }
-
-    /**
-     * @private
-     * @method addBasicFields
-     * @description Добавляет базовые поля в embed.
-     */
-    private addBasicFields(
+    private _addBasicFields(
         embed: EmbedBuilder,
         interaction: BaseInteraction
     ): void {
@@ -117,66 +86,44 @@ export class InteractionLoggerAll extends BaseInteractionLogger {
         );
     }
 
-    /**
-     * @private
-     * @method addSpecificFields
-     * @description Добавляет специфичные поля в зависимости от типа взаимодействия.
-     */
-    private addSpecificFields(
+    private _addSpecificFields(
         embed: EmbedBuilder,
-        interaction: BaseInteraction,
-        interactionData: Record<string, any>
+        interaction: BaseInteraction
     ): void {
         if (interaction.isChatInputCommand()) {
-            this.handleCommandInteraction(embed, interaction, interactionData);
+            this._handleCommandInteraction(embed, interaction);
         } else if (interaction.isButton()) {
-            this.handleButtonInteraction(embed, interaction, interactionData);
+            this._handleButtonInteraction(embed, interaction);
         } else if (interaction.isModalSubmit()) {
-            this.handleModalInteraction(embed, interaction, interactionData);
+            this._handleModalInteraction(embed, interaction);
         } else if (interaction.isAnySelectMenu()) {
-            this.handleSelectMenuInteraction(
-                embed,
-                interaction,
-                interactionData
-            );
+            this._handleSelectMenuInteraction(embed, interaction);
         }
     }
 
-    /**
-     * @private
-     * @method handleCommandInteraction
-     * @description Обрабатывает взаимодействие команды.
-     */
-    private handleCommandInteraction(
+    private _handleCommandInteraction(
         embed: EmbedBuilder,
-        interaction: any,
-        interactionData: Record<string, any>
+        interaction: ChatInputCommandInteraction
     ): void {
         embed.setTitle("Лог: Выполнение команды");
         embed.setDescription(
             `Пользователь **${interaction.user.tag}** вызвал команду **/${interaction.commandName}**.`
         );
-
-        interactionData.command = {
-            name: interaction.commandName,
-            id: interaction.commandId,
-            options: interaction.options.data.map((option: any) => ({
-                name: option.name,
-                type: option.type,
-                value: option.value,
-            })),
-        };
+        const options = interaction.options.data
+            .map((opt) => `\`${opt.name}\`: \`${opt.value}\``)
+            .join("\n");
+        if (options) {
+            embed.addFields({
+                name: "⚙️ Опции",
+                value: options,
+                inline: false,
+            });
+        }
     }
 
-    /**
-     * @private
-     * @method handleButtonInteraction
-     * @description Обрабатывает взаимодействие кнопки.
-     */
-    private handleButtonInteraction(
+    private _handleButtonInteraction(
         embed: EmbedBuilder,
-        interaction: any,
-        interactionData: Record<string, any>
+        interaction: ButtonInteraction
     ): void {
         embed.setTitle("Лог: Нажатие кнопки");
         embed.setDescription(
@@ -187,52 +134,36 @@ export class InteractionLoggerAll extends BaseInteractionLogger {
             value: `**Custom ID:** \`${interaction.customId}\``,
             inline: false,
         });
-
-        interactionData.button = {
-            customId: interaction.customId,
-            componentType: interaction.componentType,
-        };
     }
 
-    /**
-     * @private
-     * @method handleModalInteraction
-     * @description Обрабатывает взаимодействие модального окна.
-     */
-    private handleModalInteraction(
+    private _handleModalInteraction(
         embed: EmbedBuilder,
-        interaction: any,
-        interactionData: Record<string, any>
+        interaction: ModalSubmitInteraction
     ): void {
         embed.setTitle("Лог: Отправка модального окна");
         embed.setDescription(
             `Пользователь **${interaction.user.tag}** отправил модальное окно.`
         );
-        embed.addFields({
-            name: "🔧 Детали окна",
-            value: `**Custom ID:** \`${interaction.customId}\``,
-            inline: false,
-        });
-
-        interactionData.modal = {
-            customId: interaction.customId,
-            fields: interaction.fields.fields.map((field: any) => ({
-                customId: field.customId,
-                value: field.value,
-                type: field.type,
-            })),
-        };
+        const fields = interaction.fields.fields
+            .map((field) => `**${field.customId}**: \`\`\`${field.value}\`\`\``)
+            .join("\n");
+        embed.addFields(
+            {
+                name: "🔧 Детали окна",
+                value: `**Custom ID:** \`${interaction.customId}\``,
+                inline: false,
+            },
+            {
+                name: "📋 Поля",
+                value: fields || "*Нет данных*",
+                inline: false,
+            }
+        );
     }
 
-    /**
-     * @private
-     * @method handleSelectMenuInteraction
-     * @description Обрабатывает взаимодействие select меню.
-     */
-    private handleSelectMenuInteraction(
+    private _handleSelectMenuInteraction(
         embed: EmbedBuilder,
-        interaction: any,
-        interactionData: Record<string, any>
+        interaction: AnySelectMenuInteraction
     ): void {
         embed.setTitle("Лог: Выбор в меню");
         embed.setDescription(
@@ -243,29 +174,6 @@ export class InteractionLoggerAll extends BaseInteractionLogger {
             value: `**Custom ID:** \`${
                 interaction.customId
             }\`\n**Выбрано:** \`\`\`${interaction.values.join(", ")}\`\`\``,
-            inline: false,
-        });
-
-        interactionData.selectMenu = {
-            customId: interaction.customId,
-            componentType: interaction.componentType,
-            values: interaction.values,
-        };
-    }
-
-    /**
-     * @private
-     * @method addJsonField
-     * @description Добавляет JSON поле в embed.
-     */
-    private addJsonField(
-        embed: EmbedBuilder,
-        interactionData: Record<string, any>
-    ): void {
-        const jsonString = JSON.stringify(interactionData, null, 4);
-        embed.addFields({
-            name: "📋 JSON Данные",
-            value: `\`\`\`json\n${jsonString}\`\`\``,
             inline: false,
         });
     }

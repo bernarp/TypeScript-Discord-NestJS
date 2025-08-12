@@ -1,6 +1,7 @@
 /**
  * @file Command.handler.ts
- * @description Специализированный обработчик для слеш-команд и их автодополнения.
+ * @description Специализированный обработчик для слеш-команд и их автодополнений.
+ * @version 2.0: Рефакторинг для использования IConfigurationService.
  */
 import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { DiscoveryService, Reflector } from "@nestjs/core";
@@ -11,7 +12,7 @@ import {
 } from "discord.js";
 import { IClient } from "@interface/IClient";
 import { ICommand } from "@interface/ICommand";
-import { IConfig } from "@interface/IConfig";
+import { IConfigurationService } from "@interface/IConfigurationService";
 import { COMMAND_METADATA_KEY } from "@decorators/command.decorator";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { AppEvents } from "@/event.EventBus/app.events";
@@ -25,7 +26,8 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
 
     constructor(
         @Inject("IClient") private readonly _client: IClient,
-        @Inject("IConfig") private readonly _config: IConfig,
+        @Inject("IConfigurationService")
+        private readonly _configService: IConfigurationService,
         private readonly _discoveryService: DiscoveryService,
         private readonly _reflector: Reflector,
         private readonly _eventEmitter: EventEmitter2
@@ -55,9 +57,6 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
             await command.execute(interaction);
 
             if (interaction.isChatInputCommand()) {
-                this._logger.debug(
-                    `Emitting event for command "${interaction.commandName}" execution.`
-                );
                 this._eventEmitter.emit(
                     AppEvents.INTERACTION_CREATED_COMMAND,
                     new InteractionCreateEvent<ChatInputCommandInteraction>(
@@ -116,10 +115,10 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
     }
 
     private async _registerCommands(): Promise<void> {
-        const guildId = this._config.get<string>("GUILD_ID");
+        const guildId = this._configService.getEnv<string>("GUILD_ID");
         if (!guildId) {
             this._logger.error(
-                "GUILD_ID is not specified in config. Skipping command registration."
+                "GUILD_ID is not specified in .env config. Skipping command registration."
             );
             return;
         }

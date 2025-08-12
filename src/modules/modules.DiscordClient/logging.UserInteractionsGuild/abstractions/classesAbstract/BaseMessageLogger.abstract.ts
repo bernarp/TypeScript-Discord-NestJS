@@ -1,6 +1,7 @@
 /**
  * @file BaseMessageLogger.abstract.ts
  * @description Базовый абстрактный класс для логгеров сообщений.
+ * @version 2.0: Рефакторинг для использования IConfigurationService.
  */
 
 import { Inject, Injectable, Logger } from "@nestjs/common";
@@ -8,7 +9,7 @@ import { Message, PartialMessage, EmbedBuilder, TextChannel } from "discord.js";
 import { Service } from "@core/abstractions/Service";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IClient } from "@interface/IClient";
-import { IGuildConfig } from "@interface/IGuildConfig";
+import { IConfigurationService } from "@interface/IConfigurationService";
 import { IMessageLogger } from "../interfaces/IMessageLogger.interface";
 import { LogChannelType } from "../LogChannelType.enum";
 
@@ -24,19 +25,13 @@ export abstract class BaseMessageLogger
         protected readonly _embedFactory: IEmbedFactory,
         @Inject("IClient")
         protected readonly _client: IClient,
-        @Inject("IGuildConfig")
-        protected readonly _guildConfig: IGuildConfig
+        @Inject("IConfigurationService")
+        protected readonly _configService: IConfigurationService
     ) {
         super();
         this._logger = new Logger(this.constructor.name);
     }
 
-    /**
-     * @method isLoggable
-     * @description Проверяет, подлежит ли сообщение логированию.
-     * @param {Message | PartialMessage} message - Сообщение для проверки.
-     * @returns {boolean}
-     */
     public isLoggable(message: Message | PartialMessage): boolean {
         return !!(
             message.guild &&
@@ -46,41 +41,18 @@ export abstract class BaseMessageLogger
         );
     }
 
-    /**
-     * @abstract
-     * @method createLogEmbed
-     * @description Создает embed для логирования сообщения.
-     */
     public abstract createLogEmbed(
-        message: Message | PartialMessage
+        message: Message | PartialMessage,
+        ...args: any[]
     ): EmbedBuilder | Promise<EmbedBuilder>;
 
-    /**
-     * @protected
-     * @method getLogChannelId
-     * @description Получает ID канала логирования для указанного типа.
-     * @param {string} guildId - ID гильдии.
-     * @param {LogChannelType} channelType - Тип канала логирования.
-     * @returns {Promise<string | undefined>}
-     */
     protected async getLogChannelId(
         guildId: string,
         channelType: LogChannelType
     ): Promise<string | undefined> {
-        return (await this._guildConfig.get(guildId, channelType)) as
-            | string
-            | undefined;
+        return this._configService.getGuildSetting(guildId, channelType);
     }
 
-    /**
-     * @protected
-     * @method sendLog
-     * @description Отправляет embed в канал логирования.
-     * @param {string} channelId - ID канала.
-     * @param {string} guildId - ID гильдии.
-     * @param {EmbedBuilder} embed - Embed для отправки.
-     * @returns {Promise<void>}
-     */
     protected async sendLog(
         channelId: string,
         guildId: string,
@@ -105,18 +77,16 @@ export abstract class BaseMessageLogger
         }
     }
 
-    /**
-     * @protected
-     * @method truncateContent
-     * @description Обрезает содержимое сообщения до указанной длины.
-     * @param {string | null} content - Содержимое сообщения.
-     * @param {number} maxLength - Максимальная длина (по умолчанию 1000).
-     * @returns {string}
-     */
     protected truncateContent(
         content: string | null,
         maxLength: number = 1000
     ): string {
-        return content?.substring(0, maxLength) || "Содержимое недоступно.";
+        if (!content) {
+            return "Содержимое недоступно.";
+        }
+        if (content.length > maxLength) {
+            return content.substring(0, maxLength - 3) + "...";
+        }
+        return content;
     }
 }

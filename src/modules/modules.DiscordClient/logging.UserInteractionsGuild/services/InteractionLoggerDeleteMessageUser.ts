@@ -1,6 +1,7 @@
 /**
  * @file InteractionLoggerDeleteMessageUser.ts
  * @description Сервис логирования удаления сообщений пользователями.
+ * @version 2.3: Окончательное исправление обработки PartialUser с помощью хелпер-метода.
  */
 
 import { Injectable } from "@nestjs/common";
@@ -11,6 +12,7 @@ import {
     Message,
     PartialMessage,
     EmbedBuilder,
+    PartialUser,
 } from "discord.js";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { MessageDeleteEvent } from "@/event.EventBus/message-delete.event";
@@ -23,12 +25,12 @@ export class InteractionLoggerDeleteMessageUser extends BaseMessageLogger {
     public async onMessageDeleted(payload: MessageDeleteEvent): Promise<void> {
         const { deletedMessage } = payload;
 
-        if (!this.isLoggable(deletedMessage)) {
+        if (!deletedMessage.guildId || !this.isLoggable(deletedMessage)) {
             return;
         }
 
         const logChannelId = await this.getLogChannelId(
-            deletedMessage.guildId!,
+            deletedMessage.guildId,
             LogChannelType.MESSAGE_DELETE
         );
 
@@ -36,33 +38,32 @@ export class InteractionLoggerDeleteMessageUser extends BaseMessageLogger {
             return;
         }
 
-        const { author, executor } = await this.fetchAuthorAndExecutor(
+        const { author, executor } = await this._fetchAuthorAndExecutor(
             deletedMessage
         );
 
-        if (!author || !executor) {
+        if (!author) {
+            this._logger.debug(
+                "Skipping delete log because the author could not be determined."
+            );
             return;
         }
 
-        const logEmbed = await this.createLogEmbed(
+        const finalExecutor = executor ?? author;
+
+        const logEmbed = this.createLogEmbed(
             deletedMessage,
             author,
-            executor
+            finalExecutor
         );
-        await this.sendLog(logChannelId, deletedMessage.guildId!, logEmbed);
+        await this.sendLog(logChannelId, deletedMessage.guildId, logEmbed);
     }
 
     public createLogEmbed(
         message: Message | PartialMessage,
-        author?: User,
-        executor?: User
+        author: User,
+        executor: User
     ): EmbedBuilder {
-        if (!author || !executor) {
-            throw new Error(
-                "Author and executor are required for delete message log"
-            );
-        }
-
         const content = this.truncateContent(message.content);
 
         return this._embedFactory.create({
@@ -91,58 +92,69 @@ export class InteractionLoggerDeleteMessageUser extends BaseMessageLogger {
                     inline: false,
                 },
             ],
-            context: { user: author, guild: message.guild! },
+            context: { user: executor, guild: message.guild! },
         });
     }
 
     /**
      * @private
-     * @method fetchAuthorAndExecutor
-     * @description Получает автора сообщения и исполнителя удаления.
+     * @method _fetchAuthorAndExecutor
+     * @description Получает автора сообщения и исполнителя удаления из логов аудита.
+     * @returns {Promise<{ author: User | null; executor: User | null }>}
      */
-    private async fetchAuthorAndExecutor(
+    private async _fetchAuthorAndExecutor(
         message: Message | PartialMessage
     ): Promise<{ author: User | null; executor: User | null }> {
-        let author: User | null = null;
+        const author = await this._resolveUser(message.author);
 
-        if (message.author) {
-            author = message.author.partial
-                ? await message.author.fetch()
-                : message.author;
-        }
-
-        if (!author) {
+        if (!author || !message.guild) {
             return { author: null, executor: null };
         }
 
-        let executor: User | null = author;
+        try {
+            const auditLogs = await message.guild.fetchAuditLogs({
+                type: AuditLogEvent.MessageDelete,
+                limit: 5,
+            });
 
-        if (message.guild) {
-            try {
-                const auditLogs = await message.guild.fetchAuditLogs({
-                    type: AuditLogEvent.MessageDelete,
-                    limit: 5,
-                });
+            const deleteLog = auditLogs.entries.find(
+                (log) =>
+                    log.target.id === author.id &&
+                    Date.now() - log.createdTimestamp < 5000
+            );
 
-                const deleteLog = auditLogs.entries.find(
-                    (log) =>
-                        log.target.id === author?.id &&
-                        Date.now() - log.createdTimestamp < 5000
-                );
-
-                if (deleteLog?.executor) {
-                    executor = await this._client.users.fetch(
-                        deleteLog.executor.id
-                    );
-                }
-            } catch (error) {
-                this._logger.warn(
-                    `Could not fetch audit logs for guild ${message.guildId}:`,
-                    error
-                );
+            if (deleteLog?.executor) {
+                const executor = await this._resolveUser(deleteLog.executor);
+                return { author, executor };
             }
+        } catch (error) {
+            this._logger.warn(
+                `Could not fetch audit logs for guild ${message.guildId}:`,
+                error
+            );
         }
 
-        return { author, executor };
+        return { author, executor: author };
+    }
+
+    /**
+     * @private
+     * @method _resolveUser
+     * @description Гарантированно преобразует частичный объект пользователя (PartialUser) в полный (User).
+     * @param {User | PartialUser | null} user - Объект пользователя для разрешения.
+     * @returns {Promise<User | null>} Полный объект User или null в случае ошибки.
+     */
+    private async _resolveUser(
+        user: User | PartialUser | null
+    ): Promise<User | null> {
+        if (!user) {
+            return null;
+        }
+        try {
+            return await user.fetch();
+        } catch (error) {
+            this._logger.warn(`Could not fetch user ${user.id}:`, error);
+            return null;
+        }
     }
 }

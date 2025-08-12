@@ -1,10 +1,11 @@
 /**
  * @file Autocomplete.handler.ts
- * @description Обработчик для автодополнения в команде /permissions.
+ * @description Обработчик для автодополнений в команде /permissions.
+ * @version 2.0: Рефакторинг для использования IConfigurationService.
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { AutocompleteInteraction } from "discord.js";
-import { IGuildConfig } from "@interface/IGuildConfig";
+import { IConfigurationService } from "@interface/IConfigurationService";
 import { Permissions } from "@permissions/permissions.dictionary";
 
 @Injectable()
@@ -12,44 +13,45 @@ export class AutocompleteHandler {
     private readonly _allPermissions: string[];
 
     constructor(
-        @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig
+        @Inject("IConfigurationService")
+        private readonly _configService: IConfigurationService
     ) {
-        // Кэшируем список всех прав при создании сервиса для производительности
         this._allPermissions = Object.values(Permissions);
     }
 
     public async handle(interaction: AutocompleteInteraction): Promise<void> {
-        const focusedOption = interaction.options.getFocused(true);
+        if (!interaction.inGuild()) return;
 
+        const focusedOption = interaction.options.getFocused(true);
         let choices: { name: string; value: string }[] = [];
 
-        if (focusedOption.name === "permission") {
-            choices = this._getPermissionChoices(focusedOption.value);
-        }
+        try {
+            if (focusedOption.name === "permission") {
+                choices = this._getPermissionChoices(focusedOption.value);
+            }
 
-        if (
-            focusedOption.name === "key" ||
-            focusedOption.name === "group_key"
-        ) {
-            choices = await this._getGroupKeyChoices(
-                interaction.guildId!,
-                focusedOption.value
-            );
-        }
+            if (
+                focusedOption.name === "key" ||
+                focusedOption.name === "group_key"
+            ) {
+                choices = await this._getGroupKeyChoices(
+                    interaction.guildId,
+                    focusedOption.value
+                );
+            }
 
-        await interaction.respond(choices);
+            await interaction.respond(choices);
+        } catch (error) {
+            console.error("Autocomplete handler failed:", error);
+            await interaction.respond([]);
+        }
     }
 
-    /**
-     * @private
-     * @method _getPermissionChoices
-     * @description Фильтрует и возвращает список прав для автодополнения.
-     */
     private _getPermissionChoices(
         query: string
     ): { name: string; value: string }[] {
         const filtered = this._allPermissions.filter((perm) =>
-            perm.toLowerCase().startsWith(query.toLowerCase())
+            perm.toLowerCase().includes(query.toLowerCase())
         );
 
         return filtered
@@ -57,27 +59,22 @@ export class AutocompleteHandler {
             .map((perm) => ({ name: perm, value: perm }));
     }
 
-    /**
-     * @private
-     * @method _getGroupKeyChoices
-     * @description Фильтрует и возвращает список ключей групп для автодополнения.
-     */
     private async _getGroupKeyChoices(
         guildId: string,
         query: string
     ): Promise<{ name: string; value: string }[]> {
-        const groups = await this._guildConfig.getPermissionGroups(guildId);
+        const groups = await this._configService.getPermissionGroups(guildId);
         if (!groups) {
             return [];
         }
 
         const groupKeys = Object.keys(groups);
         const filtered = groupKeys.filter((key) =>
-            key.toLowerCase().startsWith(query.toLowerCase())
+            key.toLowerCase().includes(query.toLowerCase())
         );
 
         return filtered.slice(0, 25).map((key) => ({
-            name: `${groups[key].name} (${key})`, // Показываем и имя, и ключ
+            name: `${groups[key].name} (${key})`, 
             value: key,
         }));
     }

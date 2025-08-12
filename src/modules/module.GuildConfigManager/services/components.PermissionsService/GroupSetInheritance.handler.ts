@@ -1,20 +1,22 @@
 /**
  * @file GroupSetInheritance.handler.ts
  * @description Обработчик для настройки наследования групп прав.
+ * @version 2.0: Рефакторинг для использования IConfigurationService.
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { ChatInputCommandInteraction } from "discord.js";
-import { IGuildConfig } from "@interface/IGuildConfig";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionSubcommandHandler } from "../../abstractions/IPermissionSubcommandHandler";
 import { IPermissionService } from "../../abstractions/IPermissionService";
+import { IConfigurationService } from "@interface/IConfigurationService";
 
 @Injectable()
 export class GroupSetInheritanceHandler
     implements IPermissionSubcommandHandler
 {
     constructor(
-        @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig,
+        @Inject("IConfigurationService")
+        private readonly _configService: IConfigurationService,
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
         @Inject("IPermissionService")
         private readonly _permissionService: IPermissionService
@@ -23,28 +25,34 @@ export class GroupSetInheritanceHandler
     public async execute(
         interaction: ChatInputCommandInteraction
     ): Promise<void> {
-        const groupKey = interaction.options.getString("group_key", true);
-        const inheritsFrom =
-            interaction.options.getString("inherits_from")?.split(",") || [];
+        if (!interaction.inGuild()) return;
 
-        const cleanedInherits = inheritsFrom
-            .map((key) => key.trim())
-            .filter(Boolean);
+        const groupKey = interaction.options.getString("group_key", true);
+        const inheritsFromString =
+            interaction.options.getString("inherits_from");
+
+        const inheritsFrom = inheritsFromString
+            ? inheritsFromString
+                  .split(",")
+                  .map((key) => key.trim())
+                  .filter(Boolean)
+            : [];
 
         try {
-            await this._guildConfig.setGroupInheritance(
-                interaction.guildId!,
+            await this._configService.setGroupInheritance(
+                interaction.guildId,
                 groupKey,
-                cleanedInherits
+                inheritsFrom
             );
 
-            this._permissionService.invalidateCache(interaction.guildId!);
+            // Инвалидируем кэш прав
+            this._permissionService.invalidateCache(interaction.guildId);
 
             const successEmbed = this._embedFactory.createSuccessEmbed({
                 title: "Наследование обновлено",
                 description: `Группа \`${groupKey}\` теперь наследует права от: ${
-                    cleanedInherits.length > 0
-                        ? `\`${cleanedInherits.join("`, `")}\``
+                    inheritsFrom.length > 0
+                        ? `\`${inheritsFrom.join("`, `")}\``
                         : "*Никого*"
                 }.`,
                 context: { user: interaction.user, guild: interaction.guild },

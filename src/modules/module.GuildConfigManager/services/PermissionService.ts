@@ -1,17 +1,18 @@
 /**
  * @file PermissionService.ts
  * @description Реализация сервиса для проверки прав доступа пользователей.
- * ВЕРСИЯ 2.0: Добавлено кэширование и метод инвалидации кэша.
+ * @version 3.0: Рефакторинг для использования единого IConfigurationService.
  */
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { GuildMember } from "discord.js";
-import { IGuildConfig, IGuildSettings } from "@interface/IGuildConfig";
 import { IPermissionService } from "../abstractions/IPermissionService";
 import {
     PermissionNode,
     Permissions,
 } from "@permissions/permissions.dictionary";
 import { ICachedPermissions } from "../abstractions/ICachedPermissions";
+import { IConfigurationService } from "@interface/IConfigurationService";
+import { IGuildSettings } from "@type/IGuildSettings";
 
 @Injectable()
 export class PermissionService implements IPermissionService {
@@ -19,8 +20,13 @@ export class PermissionService implements IPermissionService {
     private readonly _cache = new Map<string, ICachedPermissions>();
     private readonly CACHE_LIFETIME_MS = 5 * 60 * 1000; // 5 минут
 
+    /**
+     * @constructor
+     * @param _configService - Единый сервис конфигурации для доступа к настройкам гильдий.
+     */
     constructor(
-        @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig
+        @Inject("IConfigurationService")
+        private readonly _configService: IConfigurationService
     ) {}
 
     /**
@@ -53,10 +59,7 @@ export class PermissionService implements IPermissionService {
     }
 
     /**
-     * @method invalidateCache
-     * @description Сбрасывает кэш прав для всей гильдии или для конкретного пользователя.
-     * @param {string} guildId - ID гильдии, для которой сбрасывается кэш.
-     * @param {string} [userId] - Опциональный ID пользователя.
+     * @inheritdoc
      */
     public invalidateCache(guildId: string, userId?: string): void {
         if (userId) {
@@ -87,7 +90,9 @@ export class PermissionService implements IPermissionService {
             return cached.permissions;
         }
 
-        const guildSettings = await this._guildConfig.getAll(member.guild.id);
+        const guildSettings = await this._configService.getAllGuildSettings(
+            member.guild.id
+        );
         const permissionGroups = guildSettings?.permissionGroups;
         if (!permissionGroups) {
             return new Set();
@@ -98,7 +103,7 @@ export class PermissionService implements IPermissionService {
 
         for (const groupKey in permissionGroups) {
             const group = permissionGroups[groupKey];
-            if (group.roleIds.some((roleId) => userRoleIds.has(roleId))) {
+            if (group.roleIds.some((roleId: string) => userRoleIds.has(roleId))) {
                 userGroups.push(groupKey);
             }
         }
@@ -129,7 +134,7 @@ export class PermissionService implements IPermissionService {
         collected: Set<PermissionNode>,
         visited: Set<string>
     ): void {
-        if (visited.has(groupKey)) return;
+        if (visited.has(groupKey)) return; 
         visited.add(groupKey);
 
         const group = allGroups[groupKey];
@@ -139,13 +144,15 @@ export class PermissionService implements IPermissionService {
             collected.add(permission as PermissionNode);
         }
 
-        for (const parentKey of group.inherits) {
-            this._collectPermissionsRecursive(
-                parentKey,
-                allGroups,
-                collected,
-                visited
-            );
+        if (group.inherits) {
+            for (const parentKey of group.inherits) {
+                this._collectPermissionsRecursive(
+                    parentKey,
+                    allGroups,
+                    collected,
+                    visited
+                );
+            }
         }
     }
 }

@@ -1,18 +1,20 @@
 /**
  * @file GroupDelete.handler.ts
  * @description Обработчик для удаления группы прав.
+ * @version 2.0: Рефакторинг для использования IConfigurationService.
  */
-import { Inject, Injectable } from "@nestjs/common"; 
+import { Inject, Injectable } from "@nestjs/common";
 import { ChatInputCommandInteraction } from "discord.js";
-import { IGuildConfig } from "@interface/IGuildConfig";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionSubcommandHandler } from "../../abstractions/IPermissionSubcommandHandler";
 import { IPermissionService } from "../../abstractions/IPermissionService";
+import { IConfigurationService } from "@interface/IConfigurationService";
 
-@Injectable() 
+@Injectable()
 export class GroupDeleteHandler implements IPermissionSubcommandHandler {
     constructor(
-        @Inject("IGuildConfig") private readonly _guildConfig: IGuildConfig,
+        @Inject("IConfigurationService")
+        private readonly _configService: IConfigurationService,
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
         @Inject("IPermissionService")
         private readonly _permissionService: IPermissionService
@@ -21,21 +23,23 @@ export class GroupDeleteHandler implements IPermissionSubcommandHandler {
     public async execute(
         interaction: ChatInputCommandInteraction
     ): Promise<void> {
+        if (!interaction.inGuild()) return;
+
         const groupKey = interaction.options.getString("key", true);
 
         try {
-            const group = await this._guildConfig.getPermissionGroup(
-                interaction.guildId!,
+            const group = await this._configService.getPermissionGroup(
+                interaction.guildId,
                 groupKey
             );
             if (!group) throw new Error(`Группа \`${groupKey}\` не найдена.`);
 
-            await this._guildConfig.deletePermissionGroup(
-                interaction.guildId!,
+            await this._configService.deletePermissionGroup(
+                interaction.guildId,
                 groupKey
             );
 
-            this._permissionService.invalidateCache(interaction.guildId!);
+            this._permissionService.invalidateCache(interaction.guildId);
 
             const successEmbed = this._embedFactory.createSuccessEmbed({
                 title: "Группа прав удалена",

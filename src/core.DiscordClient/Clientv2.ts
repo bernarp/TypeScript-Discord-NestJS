@@ -1,8 +1,8 @@
 /**
- * @file Client.ts
+ * @file Clientv2.ts
  * @description Реализация основного клиента Discord. Транслирует "сырые" события
  * от discord.js во внутреннюю шину событий приложения.
- * ВЕРСИЯ 2.1: Исправлены ошибки типизации для событий.
+ * @version 3.0: Рефакторинг для использования единого IConfigurationService.
  */
 import {
     Client as BaseClient,
@@ -22,7 +22,7 @@ import {
 } from "discord.js";
 import { Injectable, Logger, Inject } from "@nestjs/common";
 import { IClient } from "@interface/IClient";
-import { IConfig } from "@interface/IConfig";
+import { IConfigurationService } from "@interface/IConfigurationService";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { MessageCreateEvent } from "@event.EventBus/message-create.event";
@@ -39,8 +39,14 @@ import { ReactionAddEvent } from "@event.EventBus/reaction-add.event";
 export class Client extends BaseClient implements IClient {
     private readonly _logger = new Logger(Client.name);
 
+    /**
+     * @constructor
+     * @param _configService - Единый сервис конфигурации для доступа к глобальным настройкам.
+     * @param _eventEmitter - Шина событий NestJS для трансляции событий Discord.
+     */
     constructor(
-        @Inject("IConfig") private readonly _config: IConfig,
+        @Inject("IConfigurationService")
+        private readonly _configService: IConfigurationService,
         private readonly _eventEmitter: EventEmitter2
     ) {
         super({
@@ -70,7 +76,7 @@ export class Client extends BaseClient implements IClient {
                 `Bot has successfully logged in as ${this.user?.tag}`
             );
         });
-        const token = this._config.get<string>("TOKEN");
+        const token = this._configService.getEnv<string>("TOKEN");
         await this.login(token);
     }
 

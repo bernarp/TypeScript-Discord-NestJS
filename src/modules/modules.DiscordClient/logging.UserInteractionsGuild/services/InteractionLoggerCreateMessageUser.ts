@@ -10,6 +10,7 @@ import { AppEvents } from "@/event.EventBus/app.events";
 import { MessageCreateEvent } from "@/event.EventBus/message-create.event";
 import { BaseMessageLogger } from "../abstractions/classesAbstract/BaseMessageLogger.abstract";
 import { LogChannelType } from "../abstractions/LogChannelType.enum";
+
 @Injectable()
 export class InteractionLoggerCreateMessageUser extends BaseMessageLogger {
     @OnEvent(AppEvents.MESSAGE_CREATED)
