@@ -1,4 +1,3 @@
-
 # Руководство: Создание нового модуля
 
 Этот гайд описывает процесс создания нового функционального модуля на примере команды `/kick`.
@@ -10,9 +9,12 @@
 ```
 moderation/
 ├── commands/
-│   └── Kick.command.ts
+│   ├── Kick.command.ts
+│   └── PunishmentGet.command.ts
 ├── services/
 │   └── Moderation.service.ts
+├── interfaces/
+│   └── IModerationService.ts
 └── moderation.module.ts
 ```
 
@@ -26,12 +28,39 @@ moderation/
 export const Permissions = {
     // ...
     MODERATION_KICK: "moderation.kick",
+    MODERATION_VIEW_PUNISHMENTS: "moderation.view_punishments",
     // ...
 } as const;
 ```
 
 
-## Шаг 3: Создание сервиса (Бизнес-логика)
+## Шаг 3: Создание интерфейса сервиса
+
+**`moderation/interfaces/IModerationService.ts`**
+
+```typescript
+import { GuildMember } from "discord.js";
+
+export interface PunishmentRecord {
+    id: string;
+    userId: string;
+    moderatorId: string;
+    type: 'kick' | 'ban' | 'warn' | 'mute';
+    reason: string;
+    timestamp: Date;
+    duration?: number;
+    active: boolean;
+}
+
+export interface IModerationService {
+    kickMember(member: GuildMember, reason: string): Promise<void>;
+    getPunishment(guildId: string, punishmentId: string): Promise<PunishmentRecord | null>;
+    getAllPunishments(guildId: string, userId: string): Promise<PunishmentRecord[]>;
+}
+```
+
+
+## Шаг 4: Создание сервиса (Бизнес-логика)
 
 **`moderation/services/Moderation.service.ts`**
 
@@ -40,9 +69,10 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { GuildMember } from "discord.js";
 import { IGuildConfig } from "@interface/IGuildConfig";
 import { Service } from "@core/abstractions/Service";
+import { IModerationService, PunishmentRecord } from "../interfaces/IModerationService";
 
 @Injectable()
-export class ModerationService extends Service {
+export class ModerationService extends Service implements IModerationService {
     private readonly _logger = new Logger(ModerationService.name);
 
     constructor(
@@ -63,15 +93,35 @@ export class ModerationService extends Service {
         // Логирование в канал
         const logChannelId = await this._guildConfig.get<string>(
             member.guild.id,
-            "logChannelId" // <------ Можно отредактировать интерфейс IGuildConfig, добавив новое поле конкретно для этого метода лога.
+            "logChannelId"
         );
         // ...дальнейшая логика отправки лога
+    }
+
+    public async getPunishment(guildId: string, punishmentId: string): Promise<PunishmentRecord | null> {
+        // Здесь должна быть логика получения наказания из базы данных
+        // Пример заглушки:
+        return {
+            id: punishmentId,
+            userId: "123456789",
+            moderatorId: "987654321",
+            type: 'kick',
+            reason: "Нарушение правил",
+            timestamp: new Date(),
+            active: true
+        };
+    }
+
+    public async getAllPunishments(guildId: string, userId: string): Promise<PunishmentRecord[]> {
+        // Здесь должна быть логика получения всех наказаний пользователя из базы данных
+        // Пример заглушки:
+        return [];
     }
 }
 ```
 
 
-## Шаг 4: Создание команды (Точка входа)
+## Шаг 5: Создание команд
 
 **`moderation/commands/Kick.command.ts`**
 
@@ -82,7 +132,7 @@ import { Command } from "@decorators/command.decorator";
 import { ICommand } from "@interface/ICommand";
 import { RequiresPermission } from "@decorators/RequiresPermission.decorator";
 import { Permissions } from "@permissions/permissions.dictionary";
-import { ModerationService } from "../services/Moderation.service";
+import { IModerationService } from "../interfaces/IModerationService";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 
 @Command()
@@ -99,25 +149,103 @@ export class KickCommand implements ICommand {
         );
 
     constructor(
-        private readonly _moderationService: ModerationService,
+        @Inject("IModerationService")
+        private readonly _moderationService: IModerationService,
         @Inject("IEmbedFactory")
         private readonly _embedFactory: IEmbedFactory
     ) {}
 
     @RequiresPermission(Permissions.MODERATION_KICK)
     public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-        await this._moderationService.kickMember(
-            await interaction.guild.members.fetch(interaction.options.getUser("участник", true).id),
-            interaction.options.getString("причина") ?? "Причина не указана"
-        );
-    
+        const targetUser = interaction.options.getUser("участник", true);
+        const reason = interaction.options.getString("причина") ?? "Причина не указана";
+        
+        const targetMember = await interaction.guild.members.fetch(targetUser.id);
+        
+        await this._moderationService.kickMember(targetMember, reason);
+        
         await interaction.reply("Участник успешно выгнан!");
     }
 }
 ```
 
+**`moderation/commands/PunishmentGet.command.ts`**
 
-## Шаг 5: Сборка модуля
+```typescript
+import { Inject, Injectable } from "@nestjs/common";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
+import { Command } from "@decorators/command.decorator";
+import { ICommand } from "@interface/ICommand";
+import { RequiresPermission } from "@decorators/RequiresPermission.decorator";
+import { Permissions } from "@permissions/permissions.dictionary";
+import { IModerationService } from "../interfaces/IModerationService";
+import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
+
+@Command()
+@Injectable()
+export class PunishmentGetCommand implements ICommand {
+    public readonly data = new SlashCommandBuilder()
+        .setName("punishment")
+        .setDescription("Управление наказаниями")
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("get")
+                .setDescription("Получить информацию о наказании")
+                .addStringOption(option =>
+                    option
+                        .setName("id")
+                        .setDescription("ID наказания")
+                        .setRequired(true)
+                )
+        );
+
+    constructor(
+        @Inject("IModerationService")
+        private readonly _moderationService: IModerationService,
+        @Inject("IEmbedFactory")
+        private readonly _embedFactory: IEmbedFactory
+    ) {}
+
+    @RequiresPermission(Permissions.MODERATION_VIEW_PUNISHMENTS)
+    public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
+        const subcommand = interaction.options.getSubcommand();
+        
+        if (subcommand === "get") {
+            const punishmentId = interaction.options.getString("id", true);
+            
+            const punishment = await this._moderationService.getPunishment(
+                interaction.guild.id,
+                punishmentId
+            );
+            
+            if (!punishment) {
+                await interaction.reply({
+                    content: "Наказание с указанным ID не найдено.",
+                    ephemeral: true
+                });
+                return;
+            }
+            
+            const embed = this._embedFactory.createInfo({
+                title: `📋 Наказание #${punishment.id}`,
+                fields: [
+                    { name: "Тип", value: punishment.type, inline: true },
+                    { name: "Пользователь", value: `<@${punishment.userId}>`, inline: true },
+                    { name: "Модератор", value: `<@${punishment.moderatorId}>`, inline: true },
+                    { name: "Причина", value: punishment.reason, inline: false },
+                    { name: "Дата", value: punishment.timestamp.toLocaleString('ru-RU'), inline: true },
+                    { name: "Статус", value: punishment.active ? "Активно" : "Неактивно", inline: true }
+                ]
+            });
+            
+            await interaction.reply({ embeds: [embed] });
+        }
+    }
+}
+```
+
+
+## Шаг 6: Сборка модуля с экспортом по интерфейсу
 
 **`moderation/moderation.module.ts`**
 
@@ -127,20 +255,31 @@ import { CoreModule } from "@/core.module";
 import { GuildConfigModule } from "@modules.DiscordClient/module.GuildConfigManager/config.guild-config-manager.module";
 import { ModerationService } from "./services/Moderation.service";
 import { KickCommand } from "./commands/Kick.command";
+import { PunishmentGetCommand } from "./commands/PunishmentGet.command";
 
 @Module({
     imports: [
         CoreModule,
         GuildConfigModule
     ],
-    providers: [ModerationService, KickCommand],
-    exports: [ModerationService],
+    providers: [
+        ModerationService,
+        {
+            provide: "IModerationService",
+            useClass: ModerationService
+        },
+        KickCommand,
+        PunishmentGetCommand
+    ],
+    exports: [
+        "IModerationService" // Экспорт по интерфейсу
+    ],
 })
 export class ModerationModule {}
 ```
 
 
-## Шаг 6: Глобальная регистрация
+## Шаг 7: Глобальная регистрация
 
 **`src/app.module.ts`**
 
@@ -159,11 +298,5 @@ import { ModerationModule } from '@modules.DiscordClient/moderation/moderation.m
 export class AppModule {}
 ```
 
-После выполнения всех шагов команда `/kick` будет зарегистрирована и готова к работе.
-
-
-
-
-
-
+После выполнения всех шагов команды `/kick` и `/punishment get` будут зарегистрированы и готовы к работе. Сервис экспортируется по интерфейсу, что позволяет другим модулям использовать его через абстракцию.
 
