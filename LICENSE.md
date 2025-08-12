@@ -63,7 +63,7 @@ export class ModerationService extends Service {
         // Логирование в канал
         const logChannelId = await this._guildConfig.get<string>(
             member.guild.id,
-            "logChannelId"
+            "logChannelId" // <------ Можно отредактировать интерфейс IGuildConfig, добавив новое поле конкретно для этого метода лога.
         );
         // ...дальнейшая логика отправки лога
     }
