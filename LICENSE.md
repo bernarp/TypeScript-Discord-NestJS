@@ -1,10 +1,10 @@
----
+<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
 
 # Руководство: Создание нового модуля
 
 Этот гайд описывает процесс создания нового функционального модуля на примере команды `/kick`.
 
-### Шаг 1: Создание структуры файлов
+## Шаг 1: Создание структуры файлов
 
 Создайте следующую структуру в `src/modules/modules.DiscordClient/`:
 
@@ -17,9 +17,10 @@ moderation/
 └── moderation.module.ts
 ```
 
-### Шаг 2: Определение права доступа
 
-Добавьте новое право в глобальный словарь `permissions.dictionary.ts`. Это централизует управление доступом к команде.
+## Шаг 2: Определение права доступа
+
+Добавьте новое право в глобальный словарь `permissions.dictionary.ts`:
 
 ```typescript
 // src/core.DiscordClient/domain/permissions.DiscordClient/permissions.dictionary.ts
@@ -30,120 +31,142 @@ export const Permissions = {
 } as const;
 ```
 
-### Шаг 3: Создание сервиса (Бизнес-логика)
 
-Сервис инкапсулирует основную логику, не зависящую от Discord, и может использовать другие глобальные сервисы.
+## Шаг 3: Создание сервиса (Бизнес-логика)
 
-> **`moderation/services/Moderation.service.ts`**
-> ```typescript
-> import { Inject, Injectable, Logger } from "@nestjs/common";
-> import { GuildMember } from "discord.js";
-> import { IGuildConfig } from "@interface/IGuildConfig";
-> import { Service } from "@core/abstractions/Service";
->
-> @Injectable()
-> export class ModerationService extends Service {
->     private readonly _logger = new Logger(ModerationService.name);
-> 
->     constructor(
->         @Inject("IGuildConfig")
->         private readonly _guildConfig: IGuildConfig
->     ) {}
-> 
->     public async kickMember(member: GuildMember, reason: string): Promise<void> {
->         if (!member.kickable) {
->             throw new Error("Недостаточно прав для кика этого участника.");
->         }
->         await member.kick(reason);
-> 
->         this._logger.log(`Kicked ${member.user.tag} for: ${reason}`);
->         const logChannelId = await this._guildConfig.get<string>(
->             member.guild.id,
->             "logChannelId"
->         );
->         // ...дальнейшая логика отправки лога
->     }
-> }
-> ```
+**`moderation/services/Moderation.service.ts`**
 
-### Шаг 4: Создание команды (Точка входа)
+```typescript
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { GuildMember } from "discord.js";
+import { IGuildConfig } from "@interface/IGuildConfig";
+import { Service } from "@core/abstractions/Service";
 
-Команда обрабатывает взаимодействие с Discord, проверяет права через декоратор и вызывает сервис.
+@Injectable()
+export class ModerationService extends Service {
+    private readonly _logger = new Logger(ModerationService.name);
 
-> **`moderation/commands/Kick.command.ts`**
-> ```typescript
-> import { Inject, Injectable } from "@nestjs/common";
-> import { SlashCommandBuilder, CommandInteraction } from "discord.js";
-> import { Command } from "@decorators/command.decorator";
-> import { ICommand } from "@interface/ICommand";
-> import { RequiresPermission } from "@decorators/RequiresPermission.decorator";
-> import { Permissions } from "@permissions/permissions.dictionary";
-> import { ModerationService } from "../services/Moderation.service";
-> import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
-> 
-> @Command()
-> @Injectable()
-> export class KickCommand implements ICommand {
->     public readonly data = new SlashCommandBuilder()
->         .setName("kick")
->         .setDescription("Выгоняет участника с сервера.")
->         .addUserOption(/* ... */);
-> 
->     constructor(
->         private readonly _moderationService: ModerationService,
->         @Inject("IEmbedFactory")
->         private readonly _embedFactory: IEmbedFactory
->     ) {}
-> 
->     @RequiresPermission(Permissions.MODERATION_KICK)
->     public async execute(interaction: CommandInteraction): Promise<void> {
->         // 1. Получить опции из interaction
->         // 2. Вызвать this._moderationService.kickMember(...)
->         // 3. Ответить пользователю с помощью this._embedFactory
->     }
-> }
-> ```
+    constructor(
+        @Inject("IGuildConfig")
+        private readonly _guildConfig: IGuildConfig
+    ) {
+        super();
+    }
 
-### Шаг 5: Сборка модуля
+    public async kickMember(member: GuildMember, reason: string): Promise<void> {
+        if (!member.kickable) {
+            throw new Error("Недостаточно прав для кика этого участника.");
+        }
 
-Объедините все компоненты в файле модуля, импортировав необходимые зависимости.
+        await member.kick(reason);
+        this._logger.log(`Kicked ${member.user.tag} for: ${reason}`);
 
-> **`moderation/moderation.module.ts`**
-> ```typescript
-> import { Module } from "@nestjs/common";
-> import { CoreModule } from "@/core.module";
-> import { GuildConfigModule } from "@modules.DiscordClient/module.GuildConfigManager/config.guild-config-manager.module";
-> import { ModerationService } from "./services/Moderation.service";
-> import { KickCommand } from "./commands/Kick.command";
-> 
-> @Module({
->     imports: [
->         CoreModule, // Обеспечивает доступ к IEmbedFactory, IGuildConfig и т.д.
->         GuildConfigModule // Обеспечивает доступ к IPermissionService (через Guard)
->     ],
->     providers: [ModerationService, KickCommand],
-> })
-> export class ModerationModule {}
-> ```
+        // Логирование в канал
+        const logChannelId = await this._guildConfig.get<string>(
+            member.guild.id,
+            "logChannelId"
+        );
+        // ...дальнейшая логика отправки лога
+    }
+}
+```
 
-### Шаг 6: Глобальная регистрация
 
-Зарегистрируйте новый модуль в `app.module.ts`, чтобы приложение знало о его существовании.
+## Шаг 4: Создание команды (Точка входа)
 
-> **`src/app.module.ts`**
-> ```typescript
-> import { Module } from "@nestjs/common";
-> // ... другие импорты
-> import { ModerationModule } from '@modules.DiscordClient/moderation/moderation.module';
-> 
-> @Module({
->     imports: [
->         // ...
->         ModerationModule, // <-- Добавить сюда
->     ],
->     // ...
-> })
-> export class AppModule {}
-> ```
+**`moderation/commands/Kick.command.ts`**
 
-После этих шагов команда `/kick` будет зарегистрирована и готова к работе.
+```typescript
+import { Inject, Injectable } from "@nestjs/common";
+import { SlashCommandBuilder, ChatInputCommandInteraction, GuildMember } from "discord.js";
+import { Command } from "@decorators/command.decorator";
+import { ICommand } from "@interface/ICommand";
+import { RequiresPermission } from "@decorators/RequiresPermission.decorator";
+import { Permissions } from "@permissions/permissions.dictionary";
+import { ModerationService } from "../services/Moderation.service";
+import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
+
+@Command()
+@Injectable()
+export class KickCommand implements ICommand {
+    public readonly data = new SlashCommandBuilder()
+        .setName("kick")
+        .setDescription("Выгоняет участника с сервера.")
+        .addUserOption(option =>
+            option.setName("участник").setDescription("Участник для кика").setRequired(true)
+        )
+        .addStringOption(option =>
+            option.setName("причина").setDescription("Причина кика").setRequired(false)
+        );
+
+    constructor(
+        private readonly _moderationService: ModerationService,
+        @Inject("IEmbedFactory")
+        private readonly _embedFactory: IEmbedFactory
+    ) {}
+
+    @RequiresPermission(Permissions.MODERATION_KICK)
+    public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
+        const targetUser = interaction.options.getUser("участник", true);
+        const reason = interaction.options.getString("причина") ?? "Причина не указана";
+        
+        const targetMember = await interaction.guild.members.fetch(targetUser.id);
+        
+        await this._moderationService.kickMember(targetMember, reason);
+        
+        await interaction.reply("Участник успешно выгнан!");
+    }
+}
+```
+
+
+## Шаг 5: Сборка модуля
+
+**`moderation/moderation.module.ts`**
+
+```typescript
+import { Module } from "@nestjs/common";
+import { CoreModule } from "@/core.module";
+import { GuildConfigModule } from "@modules.DiscordClient/module.GuildConfigManager/config.guild-config-manager.module";
+import { ModerationService } from "./services/Moderation.service";
+import { KickCommand } from "./commands/Kick.command";
+
+@Module({
+    imports: [
+        CoreModule,
+        GuildConfigModule
+    ],
+    providers: [ModerationService, KickCommand],
+    exports: [ModerationService],
+})
+export class ModerationModule {}
+```
+
+
+## Шаг 6: Глобальная регистрация
+
+**`src/app.module.ts`**
+
+```typescript
+import { Module } from "@nestjs/common";
+// ... другие импорты
+import { ModerationModule } from '@modules.DiscordClient/moderation/moderation.module';
+
+@Module({
+    imports: [
+        // ...
+        ModerationModule, // <-- Добавить сюда
+    ],
+    // ...
+})
+export class AppModule {}
+```
+
+После выполнения всех шагов команда `/kick` будет зарегистрирована и готова к работе.
+
+
+
+
+
+
+
