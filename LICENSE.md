@@ -159,11 +159,10 @@ export class KickCommand implements ICommand {
     public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
         const targetUser = interaction.options.getUser("участник", true);
         const reason = interaction.options.getString("причина") ?? "Причина не указана";
-        
-        const targetMember = await interaction.guild.members.fetch(targetUser.id);
-        
-        await this._moderationService.kickMember(targetMember, reason);
-        
+        await this._moderationService.kickMember(
+            await interaction.guild.members.fetch(targetUser.id), 
+            reason
+        );
         await interaction.reply("Участник успешно выгнан!");
     }
 }
