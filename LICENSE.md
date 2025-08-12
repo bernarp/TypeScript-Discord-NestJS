@@ -41,6 +41,7 @@ export const Permissions = {
 ```typescript
 import { GuildMember } from "discord.js";
 
+// Для SQL датабаз лучше сущности прописывать в ./core.DiscordClient/domain... Но тут он прописан просто как пример.
 export interface PunishmentRecord {
     id: string;
     userId: string;
