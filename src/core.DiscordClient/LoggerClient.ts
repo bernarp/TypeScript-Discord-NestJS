@@ -42,7 +42,6 @@ export class CustomLoggerService implements ILogger, LoggerService {
             this._config.errorLogFileName
         );
 
-        // Получаем имя текущего файла один раз
         this._sourceFileName = path.basename(__filename);
 
         this._initializeDirectories().catch((error) => {
@@ -266,3 +265,4 @@ export class CustomLoggerService implements ILogger, LoggerService {
         await Promise.resolve();
     }
 }
+
