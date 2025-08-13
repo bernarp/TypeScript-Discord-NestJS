@@ -2,8 +2,9 @@ import { Global, Module, DynamicModule } from "@nestjs/common";
 import { Client } from "./core.DiscordClient/Clientv2";
 import { EmbedFactory } from "./utils.Global/EmbedFactory";
 import { ErrorLoggerService } from "./core.DiscordClient/error.HandlerFilter/services/ErrorLoggerService";
-import { ConfigurationService } from "./core.DiscordClient/ConfigurationService";
+import { ConfigurationService } from "@core/core.Services/ConfigurationService";
 import { ILogger } from "./core.DiscordClient/abstractions/interface/logger/ILogger";
+import { PinnedMessageValidatorService } from "./core.DiscordClient/core.Services/PinnedMessageValidator";
 
 @Global()
 @Module({})
@@ -36,6 +37,7 @@ export class CoreModule {
                     useClass: EmbedFactory,
                 },
                 ErrorLoggerService,
+                PinnedMessageValidatorService,
             ],
             exports: [
                 "IConfigurationService",

@@ -1,40 +1,38 @@
 /**
  * @file IConfigurationService.ts
  * @description Определяет единый контракт для сервиса конфигурации приложения.
- * Этот интерфейс-фасад предоставляет доступ как к глобальным (статичным) настройкам,
- * так и к динамическим конфигурациям для каждой гильдии.
+ * @version 1.2.0: Добавлен метод для удаления Pinned Message.
+ * @author System
  */
 
 import { IPermissionGroup } from "./IPermissionGroup";
-import { IGuildSettings } from "@type/IGuildSettings";
+import { IGuildSettings, PinnedMessageConfig } from "@type/IGuildSettings";
 import { PermissionNode } from "@permissions/permissions.dictionary";
 
 /**
  * @interface IConfigurationService
- * @description Единый сервис для управления всеми видами конфигурации.
+ * @description Единый сервис для управления всеми видами конфигурации:
+ * глобальными переменными окружения, динамическими настройками гильдий и системой прав доступа.
  */
 export interface IConfigurationService {
     /**
-     * @method getGlobal
+     * @method getEnv
      * @description Получает значение глобальной конфигурации по ключу (например, из .env файла).
      * @template T - Ожидаемый тип возвращаемого значения.
      * @param {string} key - Ключ параметра (например, 'TOKEN', 'DATABASE_URL').
      * @param {T} [defaultValue] - Опциональное значение по умолчанию.
      * @returns {T} Значение параметра или defaultValue, если ключ не найден.
+     * @throws {Error} Если ключ не найден и defaultValue не предоставлен.
      */
     getEnv<T>(key: string, defaultValue?: T): T;
 
     /**
-     * @method hasGlobal
+     * @method hasEnv
      * @description Проверяет наличие глобального ключа в конфигурации.
      * @param {string} key - Ключ для проверки.
      * @returns {boolean} true, если ключ существует, иначе false.
      */
     hasEnv(key: string): boolean;
-
-    // =================================================================
-    // --- Методы для работы с настройками гильдий ---
-    // =================================================================
 
     /**
      * @method getGuildSetting
@@ -70,6 +68,39 @@ export interface IConfigurationService {
      * @returns {Promise<IGuildSettings | null>} Объект с настройками или null, если для гильдии нет конфигурации.
      */
     getAllGuildSettings(guildId: string): Promise<IGuildSettings | null>;
+
+    /**
+     * @method getAllGuildConfigs
+     * @description Возвращает кэшированные конфигурации всех гильдий.
+     * @returns {Promise<[string, IGuildSettings][]>} Массив кортежей [guildId, settings].
+     */
+    getAllGuildConfigs(): Promise<[string, IGuildSettings][]>;
+
+    /**
+     * @method setPinnedMessage
+     * @description Сохраняет или обновляет информацию о закрепленном сообщении для гильдии.
+     * @param {string} guildId - ID гильдии.
+     * @param {keyof Required<IGuildSettings>['pinnedMessages']} type - Тип сообщения (например, 'ticketCreatePanel').
+     * @param {PinnedMessageConfig} config - Объект с ID канала и сообщения.
+     * @returns {Promise<void>}
+     */
+    setPinnedMessage(
+        guildId: string,
+        type: keyof Required<IGuildSettings>["pinnedMessages"],
+        config: PinnedMessageConfig
+    ): Promise<void>;
+
+    /**
+     * @method deletePinnedMessage
+     * @description Удаляет информацию о закрепленном сообщении из конфигурации гильдии.
+     * @param {string} guildId - ID гильдии.
+     * @param {keyof Required<IGuildSettings>['pinnedMessages']} type - Тип сообщения для удаления.
+     * @returns {Promise<void>}
+     */
+    deletePinnedMessage(
+        guildId: string,
+        type: keyof Required<IGuildSettings>["pinnedMessages"]
+    ): Promise<void>;
 
     /**
      * @method backup

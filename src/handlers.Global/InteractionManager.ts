@@ -12,16 +12,18 @@ import { IInteractionHandler } from "@interface/IInteractionHandler";
 import { CommandHandler } from "./components.DiscordInteractions/Command.handler";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { ILogger } from "@logger/";
+import { ButtonManager } from "./components.DiscordInteractions/Button.handler";
 
 @Injectable()
 export class InteractionManager {
     private readonly _handlers: IInteractionHandler[];
 
     constructor(
+        buttonManager: ButtonManager,
         commandHandler: CommandHandler,
-        @Inject("ILogger") private readonly _logger: ILogger // ILogger dd
+        @Inject("ILogger") private readonly _logger: ILogger // Стало
     ) {
-        this._handlers = [commandHandler];
+        this._handlers = [commandHandler, buttonManager];
     }
 
     @OnEvent(AppEvents.INTERACTION_CREATED)
@@ -52,4 +54,3 @@ export class InteractionManager {
         );
     }
 }
-

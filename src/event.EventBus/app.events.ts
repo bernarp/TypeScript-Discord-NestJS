@@ -7,6 +7,8 @@
  * 3. Централизованную документацию всех событий в одном месте.
  */
 export const AppEvents = {
+    CLIENT_READY: "client.ready",
+
     // =================================================================
     // --- События, связанные с сообщениями (Message) ---
     // =================================================================
@@ -419,4 +421,11 @@ export const AppEvents = {
      * @payload {UserUndeafenedEvent} - TODO: Создать класс события
      */
     MODERATION_UNDEAFEN: "moderation.undeafen",
+
+    /**
+     * @event pinned.message.missing
+     * @description Срабатывает, когда PinnedMessageValidator не находит настроенное сообщение.
+     * @payload {PinnedMessageMissingEvent}
+     */
+    PINNED_MESSAGE_MISSING: "pinned.message.missing",
 };

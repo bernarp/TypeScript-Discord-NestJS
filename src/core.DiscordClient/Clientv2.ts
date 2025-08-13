@@ -2,7 +2,8 @@
  * @file Clientv2.ts
  * @description Реализация основного клиента Discord. Транслирует "сырые" события
  * от discord.js во внутреннюю шину событий приложения.
- * @version 3.1: Рефакторинг для использования кастомного ILogger.
+ * @version 3.2: Добавлена отправка события AppEvents.CLIENT_READY после успешной авторизации.
+ * @author System
  */
 import {
     Client as BaseClient,
@@ -35,22 +36,15 @@ import { GuildBanAddEvent } from "@event.EventBus/guild-ban-add.event";
 import { GuildBanRemoveEvent } from "@event.EventBus/guild-ban-remove.event";
 import { ReactionAddEvent } from "@event.EventBus/reaction-add.event";
 import { ILogger } from "@interface/logger/ILogger";
+import { ClientReadyEvent } from "@/event.EventBus/client-ready.event";
 
 @Injectable()
 export class Client extends BaseClient implements IClient {
-    // Было: private readonly _logger = new Logger(Client.name);
-
-    /**
-     * @constructor
-     * @param _configService - Единый сервис конфигурации для доступа к глобальным настройкам.
-     * @param _eventEmitter - Шина событий NestJS для трансляции событий Discord.
-     * @param _logger - Кастомный сервис логирования.
-     */
     constructor(
         @Inject("IConfigurationService")
         private readonly _configService: IConfigurationService,
         private readonly _eventEmitter: EventEmitter2,
-        @Inject("ILogger") private readonly _logger: ILogger // Стало
+        @Inject("ILogger") private readonly _logger: ILogger
     ) {
         super({
             intents: [
@@ -74,11 +68,18 @@ export class Client extends BaseClient implements IClient {
     public async start(): Promise<void> {
         this._logger.inf("Attempting to log in to Discord...");
         this._registerDiscordEventHandlers();
+
         this.once(Events.ClientReady, () => {
             this._logger.inf(
                 `Bot has successfully logged in as ${this.user?.tag}`
             );
+
+            this._eventEmitter.emit(
+                AppEvents.CLIENT_READY,
+                new ClientReadyEvent(this)
+            );
         });
+
         const token = this._configService.getEnv<string>("TOKEN");
         await this.login(token);
     }

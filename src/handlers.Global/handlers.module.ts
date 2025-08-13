@@ -6,6 +6,7 @@ import { DynamicModule, Module } from "@nestjs/common";
 import { InteractionManager } from "./InteractionManager";
 import { CommandHandler } from "./components.DiscordInteractions/Command.handler";
 import { DiscoveryModule } from "@nestjs/core";
+import { ButtonManager } from "./components.DiscordInteractions/Button.handler";
 
 @Module({
     imports: [DiscoveryModule],
@@ -15,7 +16,7 @@ export class HandlersModule {
         return {
             module: HandlersModule,
             imports: [...options.imports],
-            providers: [InteractionManager, CommandHandler],
+            providers: [InteractionManager, CommandHandler, ButtonManager],
             exports: [],
         };
     }

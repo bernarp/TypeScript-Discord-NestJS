@@ -8,10 +8,18 @@ import { ExampleService } from "./services/ExampleService";
 import { HealthModuleCommand } from "./commands/HealthModuleCommand";
 import { CoreModule } from "@/core.module";
 import { EmitEventCommand } from "./commands/EmitEventCommand";
+import { ButtonTestCommand } from "./buttons/ButtonTest";
+import { DeleteMessageButtonHandler } from "./buttons/handlers/DeleteMessageButton.handler";
 
 @Module({
     imports: [CoreModule],
-    providers: [ExampleService, HealthModuleCommand, EmitEventCommand],
+    providers: [
+        ExampleService,
+        HealthModuleCommand,
+        EmitEventCommand,
+        ButtonTestCommand,
+        DeleteMessageButtonHandler,
+    ],
     exports: [ExampleService],
 })
 export class ExampleModule {}

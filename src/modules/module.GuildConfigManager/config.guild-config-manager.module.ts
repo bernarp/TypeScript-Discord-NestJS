@@ -14,6 +14,7 @@ import { GroupGrantHandler } from "./services/components.PermissionsService/Grou
 import { GroupRevokeHandler } from "./services/components.PermissionsService/GroupRevoke.handler";
 import { AutocompleteHandler } from "./services/components.PermissionsService/Autocomplete.handler";
 import { GroupSetInheritanceHandler } from "./services/components.PermissionsService/GroupSetInheritance.handler";
+import { PinnedMessageCommand } from "./commands/PinnedMessageCommand";
 
 @Module({
     imports: [CoreModule],
@@ -28,6 +29,7 @@ import { GroupSetInheritanceHandler } from "./services/components.PermissionsSer
         PermissionService,
         AutocompleteHandler,
         GroupSetInheritanceHandler,
+        PinnedMessageCommand,
         {
             provide: "IPermissionService",
             useClass: PermissionService,
