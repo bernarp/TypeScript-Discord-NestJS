@@ -1,3 +1,5 @@
+Примерный вывод логов в ./logs:
+
 {"timestamp":"2025-08-13T10:28:40.177Z","level":"INFO","message":"Starting Nest application...","filePath":"dist/node_modules/@nestjs/common/services/logger.service.js","lineNumber":57,"methodName":"log","context":{"nestContext":"NestFactory"}}
 {"timestamp":"2025-08-13T10:28:40.205Z","level":"INFO","message":"Loading guild configurations into cache...","filePath":"dist/core.DiscordClient/ConfigurationService.js","lineNumber":30,"methodName":"init"}
 {"timestamp":"2025-08-13T10:28:40.207Z","level":"INFO","message":"TicketGuildsystemModule dependencies initialized","filePath":"dist/node_modules/@nestjs/common/services/logger.service.js","lineNumber":57,"methodName":"log","context":{"nestContext":"InstanceLoader"}}
