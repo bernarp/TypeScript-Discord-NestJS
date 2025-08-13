@@ -1,16 +1,13 @@
 /**
  * @file PermissionGuard.ts
- * @description "Охранник", который проверяет права пользователя перед выполнением команды.
- * @version 2.0: Код не требует изменений благодаря принципу инверсии зависимостей (SOLID).
- * Он зависит от абстракции (IPermissionService), а не от конкретной реализации.
- * Пока реализация (PermissionService) соответствует контракту, этот код будет работать.
+ * @description "Стражник", который проверяет права пользователя перед выполнением команды.
+ * @version 2.1: Рефакторинг для использования кастомного ILogger.
  */
 import {
     Injectable,
     CanActivate,
     ExecutionContext,
     Inject,
-    Logger,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { CommandInteraction, GuildMember } from "discord.js";
@@ -19,15 +16,15 @@ import {
     PERMISSIONS_METADATA_KEY,
     PermissionRequirements,
 } from "@decorators/requiresPermission.decorator";
+import { ILogger } from "@logger/";
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
-    private readonly _logger = new Logger(PermissionGuard.name);
-
     constructor(
         private readonly _reflector: Reflector,
         @Inject("IPermissionService")
-        private readonly _permissionService: IPermissionService
+        private readonly _permissionService: IPermissionService,
+        @Inject("ILogger") private readonly _logger: ILogger
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -86,11 +83,6 @@ export class PermissionGuard implements CanActivate {
         return hasPermission;
     }
 
-    /**
-     * @private
-     * @method _checkPermissions
-     * @description Выполняет проверку прав в соответствии с указанной логикой (AND/OR).
-     */
     private async _checkPermissions(
         member: GuildMember,
         requirements: PermissionRequirements,

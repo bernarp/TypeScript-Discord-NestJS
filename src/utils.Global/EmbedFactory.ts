@@ -1,9 +1,10 @@
 /**
  * @file EmbedFactory.ts
  * @description Реализация универсальной фабрики для создания Discord Embeds.
+ * @version 1.1: Рефакторинг для использования кастомного ILogger.
  */
 
-import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import { Colors, EmbedBuilder } from "discord.js";
 import { IClient } from "@interface/IClient";
 import {
@@ -12,13 +13,16 @@ import {
     EmbedStencilOptions,
 } from "@interface/utils/IEmbedFactory";
 import { EmbedFooterGenerator } from "./embed/embedFooter";
+import { ILogger } from "@logger/";
 
 @Injectable()
 export class EmbedFactory implements IEmbedFactory, OnModuleInit {
-    private readonly _logger = new Logger(EmbedFactory.name);
     private _footerGenerator: EmbedFooterGenerator;
 
-    public constructor(@Inject("IClient") private readonly _client: IClient) {}
+    public constructor(
+        @Inject("IClient") private readonly _client: IClient,
+        @Inject("ILogger") private readonly _logger: ILogger
+    ) {}
 
     public onModuleInit() {
         if (this._client.isReady()) {
@@ -55,23 +59,15 @@ export class EmbedFactory implements IEmbedFactory, OnModuleInit {
         return embed;
     }
 
-    /**
-     * @inheritdoc
-     * @description  Этот метод теперь игнорирует title и color, если они были переданы.
-     */
     public createSuccessEmbed(options: EmbedStencilOptions): EmbedBuilder {
         const { title, color, ...rest } = options;
         return this.create({
-            title: "✅ Успех", 
+            title: "✅ Успех",
             ...rest,
             color: Colors.Green,
         });
     }
 
-    /**
-     * @inheritdoc
-     * @description Аналогично createSuccessEmbed.
-     */
     public createInfoEmbed(options: EmbedStencilOptions): EmbedBuilder {
         const { title, color, ...rest } = options;
         return this.create({
@@ -81,10 +77,6 @@ export class EmbedFactory implements IEmbedFactory, OnModuleInit {
         });
     }
 
-    /**
-     * @inheritdoc
-     * @description Аналогично createSuccessEmbed.
-     */
     public createErrorEmbed(options: EmbedStencilOptions): EmbedBuilder {
         const { title, color, ...rest } = options;
         return this.create({
@@ -99,7 +91,7 @@ export class EmbedFactory implements IEmbedFactory, OnModuleInit {
             this._footerGenerator = new EmbedFooterGenerator(
                 this._client.user.username
             );
-            this._logger.log("EmbedFactory initialized.");
+            this._logger.inf("EmbedFactory initialized.");
         } else {
             this._logger.warn(
                 "Could not initialize EmbedFactory: client.user is null."

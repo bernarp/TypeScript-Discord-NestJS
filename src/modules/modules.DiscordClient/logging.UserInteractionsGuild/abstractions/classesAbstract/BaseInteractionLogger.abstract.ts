@@ -1,10 +1,10 @@
 /**
  * @file BaseInteractionLogger.abstract.ts
  * @description Базовый абстрактный класс для логгеров взаимодействий.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1: Рефакторинг для использования кастомного ILogger.
  */
 
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { BaseInteraction, EmbedBuilder, TextChannel } from "discord.js";
 import { Service } from "@core/abstractions/Service";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
@@ -13,13 +13,13 @@ import { IConfigurationService } from "@interface/IConfigurationService";
 import { IInteractionLogger } from "../interfaces/IInteractionLogger.interface";
 import { LogChannelType } from "../LogChannelType.enum";
 import { InteractionCreateEvent } from "@/event.EventBus/interaction-create.eventv2";
+import { ILogger } from "@logger/";
 
 @Injectable()
 export abstract class BaseInteractionLogger
     extends Service
     implements IInteractionLogger
 {
-    protected readonly _logger: Logger;
 
     constructor(
         @Inject("IEmbedFactory")
@@ -27,10 +27,11 @@ export abstract class BaseInteractionLogger
         @Inject("IClient")
         protected readonly _client: IClient,
         @Inject("IConfigurationService")
-        protected readonly _configService: IConfigurationService
+        protected readonly _configService: IConfigurationService,
+        @Inject("ILogger")
+        protected readonly _logger: ILogger 
     ) {
         super();
-        this._logger = new Logger(this.constructor.name);
     }
 
     public abstract onInteractionCreated(
@@ -63,9 +64,9 @@ export abstract class BaseInteractionLogger
 
             await logChannel.send({ embeds: [embed] });
         } catch (error) {
-            this._logger.error(
+            this._logger.err(
                 `Failed to send log message to channel ${channelId} for guild ${guildId}:`,
-                error
+                error.stack
             );
         }
     }

@@ -2,21 +2,25 @@
  * @file InteractionManager.ts
  * @description Центральный диспетчер, который получает все взаимодействия и
  * делегирует их обработку специализированным обработчикам.
+ * @version 1.1: Рефакторинг для использования кастомного ILogger.
  */
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import { Interaction } from "discord.js";
 import { InteractionCreateEvent } from "@event.EventBus/interaction-create.eventv2";
 import { IInteractionHandler } from "@interface/IInteractionHandler";
 import { CommandHandler } from "./components.DiscordInteractions/Command.handler";
 import { AppEvents } from "@/event.EventBus/app.events";
+import { ILogger } from "@logger/";
 
 @Injectable()
 export class InteractionManager {
-    private readonly _logger = new Logger(InteractionManager.name);
     private readonly _handlers: IInteractionHandler[];
 
-    constructor(commandHandler: CommandHandler) {
+    constructor(
+        commandHandler: CommandHandler,
+        @Inject("ILogger") private readonly _logger: ILogger // Стало
+    ) {
         this._handlers = [commandHandler];
     }
 
@@ -34,9 +38,9 @@ export class InteractionManager {
                 try {
                     await handler.handle(interaction);
                 } catch (error) {
-                    this._logger.error(
+                    this._logger.err(
                         `Handler "${handler.constructor.name}" failed to process interaction:`,
-                        error
+                        error.stack
                     );
                 }
                 return;

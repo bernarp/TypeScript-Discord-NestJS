@@ -1,27 +1,21 @@
 /**
  * @file discord-exception.filter.ts
  * @description Глобальный фильтр для перехвата всех необработанных исключений.
- * ВЕРСИЯ 2.0: Использует ErrorLoggerService. Без отправки Embed.
+ * @version 2.1: Рефакторинг для использования кастомного ILogger.
  */
-import {
-    ArgumentsHost,
-    Catch,
-    ExceptionFilter,
-    Inject,
-    Logger,
-} from "@nestjs/common";
+import { ArgumentsHost, Catch, ExceptionFilter, Inject } from "@nestjs/common";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { CommandInteraction } from "discord.js";
 import { ErrorLoggerService } from "@err/services/ErrorLoggerService";
+import { ILogger } from "@interface/logger/ILogger";
 
 @Catch()
 export class appErrorHandler implements ExceptionFilter {
-    private readonly _logger = new Logger(appErrorHandler.name);
 
     constructor(
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
-
-        private readonly _errorLogger: ErrorLoggerService
+        private readonly _errorLogger: ErrorLoggerService,
+        @Inject("ILogger") private readonly _logger: ILogger // Стало
     ) {}
 
     async catch(exception: Error, host: ArgumentsHost) {
@@ -63,9 +57,9 @@ export class appErrorHandler implements ExceptionFilter {
                 });
             }
         } catch (replyError) {
-            this._logger.error(
+            this._logger.err(
                 `Failed to send error reply to user for error ID ${errorId}:`,
-                replyError
+                replyError.stack
             );
         }
     }

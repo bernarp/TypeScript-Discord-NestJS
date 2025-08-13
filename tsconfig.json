@@ -22,10 +22,12 @@
          * Strict Type-Checking Options (Опции строгой проверки типов)
          * Включение этих опций делает код более надежным и помогает избежать множества распространенных ошибок.
          */
+
         "strictNullChecks": false, // Если true, null и undefined не могут быть присвоены переменным других типов. NestJS генератор ставит false, но рекомендуется true для новых проектов.
-        "noImplicitAny": false, // Если true, вызывает ошибку при наличии переменных или параметров с неявным типом 'any'. Рекомендуется установить в true.
+
+        "noImplicitAny": true, // Если true, вызывает ошибку при наличии переменных или параметров с неявным типом 'any'. Рекомендуется установить в true.
         "strictBindCallApply": false, // Включает более строгую проверку методов .bind, .call, и .apply.
-        "forceConsistentCasingInFileNames": false, // Запрещает импортировать файлы с некорректным регистром символов в пути.
+        "forceConsistentCasingInFileNames": true, // Запрещает импортировать файлы с некорректным регистром символов в пути.
         "noFallthroughCasesInSwitch": false, // Сообщает об ошибках в конструкциях switch, где один case "проваливается" в другой без break или return.
 
         /*
@@ -37,6 +39,8 @@
             // Например: "@users/*": ["src/users/*"]
             "@/*": ["src/*"],
             "@interface/*": ["src/core.DiscordClient/abstractions/interface/*"],
+            "@type/*": ["src/core.DiscordClient/abstractions/types/*"],
+
             "@handlers.Global/*": ["src/handlers.Global/*"],
             "@core/*": ["src/core.DiscordClient/*"],
             "@decorators/*": ["src/decorators.NestJS/*"],
@@ -52,7 +56,11 @@
             "@utils.Global/*": ["src/utils.Global/*"],
             "@event.EventBus/*": ["src/event.EventBus/*"],
             "@err/*": ["src/core.DiscordClient/error.HandlerFilter/*"],
-            "@permissions/*": ["src/core.DiscordClient/domain/permissions.DiscordClient/*"]
+            "@permissions/*": [
+                "src/core.DiscordClient/domain/permissions.DiscordClient/*"
+            ],
+            "@guards/*": ["src/guards.NestJS/*"],
+            "@logger/*": ["src/core.DiscordClient/abstractions/interface/logger/ILogger.ts"]
         }
     },
     // "include" - массив путей, которые должны быть включены в компиляцию.

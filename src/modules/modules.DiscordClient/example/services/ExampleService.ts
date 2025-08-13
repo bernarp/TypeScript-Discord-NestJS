@@ -1,9 +1,11 @@
 /**
  * @file ExampleService.ts
  * @description Сервис модуля Example для бизнес-логики и работы с данными.
+ * @version 1.1: Рефакторинг для использования кастомного ILogger.
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
+import { ILogger } from "@logger/";
 
 export interface HealthInfo {
     status: string;
@@ -30,13 +32,9 @@ export interface HealthInfo {
 
 @Injectable()
 export class ExampleService {
-    private readonly _logger = new Logger(ExampleService.name);
 
-    /**
-     * @method getHealthInfo
-     * @description Получает детальную информацию о состоянии системы и приложения.
-     * @returns {Promise<HealthInfo>} Информация о здоровье системы
-     */
+    constructor(@Inject("ILogger") private readonly _logger: ILogger) {}
+
     public async getHealthInfo(): Promise<HealthInfo> {
         this._logger.debug("Getting system health information");
 
@@ -45,10 +43,8 @@ export class ExampleService {
             const memoryUsage = process.memoryUsage();
             const cpuUsage = process.cpuUsage();
 
-            // Конвертируем время работы в читаемый формат
             const uptimeFormatted = this._formatUptime(uptime);
 
-            // Конвертируем память в мегабайты
             const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
             const memoryTotalMB = Math.round(
                 memoryUsage.heapTotal / 1024 / 1024
@@ -57,13 +53,14 @@ export class ExampleService {
                 (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100
             );
 
-            // Получаем загрузку системы (если доступно)
             let loadAverage: number[] = [];
             try {
                 const os = await import("os");
                 loadAverage = os.loadavg();
             } catch (error) {
-                this._logger.warn("Could not get system load average:", error);
+                this._logger.warn("Could not get system load average:", {
+                    error: error.message,
+                });
                 loadAverage = [0, 0, 0];
             }
 
@@ -82,7 +79,7 @@ export class ExampleService {
                 },
                 performance: {
                     cpuUsage: {
-                        user: Math.round(cpuUsage.user / 1000), // микросекунды в миллисекунды
+                        user: Math.round(cpuUsage.user / 1000),
                         system: Math.round(cpuUsage.system / 1000),
                     },
                     loadAverage: loadAverage,
@@ -95,9 +92,8 @@ export class ExampleService {
             );
             return healthInfo;
         } catch (error) {
-            this._logger.error("Failed to get health information:", error);
+            this._logger.err("Failed to get health information:", error.stack);
 
-            // Возвращаем базовую информацию в случае ошибки
             return {
                 status: "degraded",
                 uptime: "unknown",
@@ -123,11 +119,6 @@ export class ExampleService {
         }
     }
 
-    /**
-     * @method checkSystemStatus
-     * @description Проверяет общий статус системы на основе различных метрик.
-     * @returns {Promise<{status: string, issues: string[]}>} Статус системы и список проблем
-     */
     public async checkSystemStatus(): Promise<{
         status: string;
         issues: string[];
@@ -140,7 +131,6 @@ export class ExampleService {
         try {
             const healthInfo = await this.getHealthInfo();
 
-            // Проверяем использование памяти
             if (healthInfo.memory.percentage > 90) {
                 issues.push("⚠️ Высокое использование памяти");
                 status = "warning";
@@ -149,7 +139,6 @@ export class ExampleService {
                 status = "critical";
             }
 
-            // Проверяем загрузку системы (для Unix-систем)
             if (healthInfo.performance.loadAverage.length > 0) {
                 const avgLoad = healthInfo.performance.loadAverage[0];
                 if (avgLoad > 2.0) {
@@ -158,7 +147,6 @@ export class ExampleService {
                 }
             }
 
-            // Проверяем время работы (если слишком мало, возможно недавний перезапуск)
             const uptimeSeconds = process.uptime();
             if (uptimeSeconds < 60) {
                 issues.push("ℹ️ Приложение недавно запущено");
@@ -173,7 +161,10 @@ export class ExampleService {
             );
             return { status, issues };
         } catch (error) {
-            this._logger.error("Failed to perform system status check:", error);
+            this._logger.err(
+                "Failed to perform system status check:",
+                error.stack
+            );
             return {
                 status: "error",
                 issues: ["❌ Не удалось выполнить проверку системы"],
@@ -181,13 +172,6 @@ export class ExampleService {
         }
     }
 
-    /**
-     * @private
-     * @method _formatUptime
-     * @description Форматирует время работы в читаемый вид.
-     * @param {number} uptime Время работы в секундах
-     * @returns {string} Отформатированное время работы
-     */
     private _formatUptime(uptime: number): string {
         const days = Math.floor(uptime / (24 * 60 * 60));
         const hours = Math.floor((uptime % (24 * 60 * 60)) / (60 * 60));

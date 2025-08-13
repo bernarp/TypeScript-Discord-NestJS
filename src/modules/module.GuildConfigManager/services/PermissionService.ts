@@ -1,9 +1,9 @@
 /**
  * @file PermissionService.ts
  * @description Реализация сервиса для проверки прав доступа пользователей.
- * @version 3.0: Рефакторинг для использования единого IConfigurationService.
+ * @version 3.1: Рефакторинг для использования кастомного ILogger.
  */
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { GuildMember } from "discord.js";
 import { IPermissionService } from "../abstractions/IPermissionService";
 import {
@@ -13,25 +13,19 @@ import {
 import { ICachedPermissions } from "../abstractions/ICachedPermissions";
 import { IConfigurationService } from "@interface/IConfigurationService";
 import { IGuildSettings } from "@type/IGuildSettings";
+import { ILogger } from "@logger/";
 
 @Injectable()
 export class PermissionService implements IPermissionService {
-    private readonly _logger = new Logger(PermissionService.name);
     private readonly _cache = new Map<string, ICachedPermissions>();
     private readonly CACHE_LIFETIME_MS = 5 * 60 * 1000; // 5 минут
 
-    /**
-     * @constructor
-     * @param _configService - Единый сервис конфигурации для доступа к настройкам гильдий.
-     */
     constructor(
         @Inject("IConfigurationService")
-        private readonly _configService: IConfigurationService
+        private readonly _configService: IConfigurationService,
+        @Inject("ILogger") private readonly _logger: ILogger 
     ) {}
 
-    /**
-     * @inheritdoc
-     */
     public async check(
         member: GuildMember,
         permission: PermissionNode
@@ -58,9 +52,6 @@ export class PermissionService implements IPermissionService {
         return false;
     }
 
-    /**
-     * @inheritdoc
-     */
     public invalidateCache(guildId: string, userId?: string): void {
         if (userId) {
             const cacheKey = `${guildId}:${userId}`;
@@ -103,7 +94,9 @@ export class PermissionService implements IPermissionService {
 
         for (const groupKey in permissionGroups) {
             const group = permissionGroups[groupKey];
-            if (group.roleIds.some((roleId: string) => userRoleIds.has(roleId))) {
+            if (
+                group.roleIds.some((roleId: string) => userRoleIds.has(roleId))
+            ) {
                 userGroups.push(groupKey);
             }
         }
@@ -134,7 +127,7 @@ export class PermissionService implements IPermissionService {
         collected: Set<PermissionNode>,
         visited: Set<string>
     ): void {
-        if (visited.has(groupKey)) return; 
+        if (visited.has(groupKey)) return;
         visited.add(groupKey);
 
         const group = allGroups[groupKey];

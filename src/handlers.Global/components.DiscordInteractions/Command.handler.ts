@@ -1,9 +1,9 @@
 /**
  * @file Command.handler.ts
  * @description Специализированный обработчик для слеш-команд и их автодополнений.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1: Рефакторинг для использования кастомного ILogger.
  */
-import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import { DiscoveryService, Reflector } from "@nestjs/core";
 import {
     Collection,
@@ -18,10 +18,10 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { InteractionCreateEvent } from "@event.EventBus/interaction-create.eventv2";
 import { IInteractionHandler } from "@interface/IInteractionHandler";
+import { ILogger } from "@logger/";
 
 @Injectable()
 export class CommandHandler implements IInteractionHandler, OnModuleInit {
-    private readonly _logger = new Logger(CommandHandler.name);
     private readonly _commands = new Collection<string, ICommand>();
 
     constructor(
@@ -30,7 +30,8 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
         private readonly _configService: IConfigurationService,
         private readonly _discoveryService: DiscoveryService,
         private readonly _reflector: Reflector,
-        private readonly _eventEmitter: EventEmitter2
+        private readonly _eventEmitter: EventEmitter2,
+        @Inject("ILogger") private readonly _logger: ILogger
     ) {}
 
     public supports(interaction: Interaction): boolean {
@@ -65,9 +66,9 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
                 );
             }
         } catch (error) {
-            this._logger.error(
+            this._logger.err(
                 `Error processing interaction for command "${command.data.name}":`,
-                error
+                error.stack
             );
 
             if (interaction.isChatInputCommand()) {
@@ -87,7 +88,7 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
     }
 
     private _loadCommands(): void {
-        this._logger.log("Searching for commands using DiscoveryService...");
+        this._logger.inf("Searching for commands using DiscoveryService...");
         const providers = this._discoveryService.getProviders();
 
         providers
@@ -103,7 +104,7 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
                 const command = wrapper.instance as ICommand;
                 if (command.data?.name) {
                     this._commands.set(command.data.name, command);
-                    this._logger.log(
+                    this._logger.inf(
                         `Command "${command.data.name}" discovered and loaded.`
                     );
                 }
@@ -117,7 +118,7 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
     private async _registerCommands(): Promise<void> {
         const guildId = this._configService.getEnv<string>("GUILD_ID");
         if (!guildId) {
-            this._logger.error(
+            this._logger.err(
                 "GUILD_ID is not specified in .env config. Skipping command registration."
             );
             return;
@@ -128,15 +129,15 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
         const commandsData = this._commands.map((cmd) => cmd.data.toJSON());
 
         try {
-            this._logger.log(
+            this._logger.inf(
                 `Registering ${commandsData.length} commands on guild: ${guildId}`
             );
             await this._client.application!.commands.set(commandsData, guildId);
-            this._logger.log("All commands were successfully registered.");
+            this._logger.inf("All commands were successfully registered.");
         } catch (error) {
-            this._logger.error(
+            this._logger.err(
                 "An error occurred while registering commands:",
-                error
+                error.stack
             );
         }
     }
@@ -155,9 +156,9 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
                 await interaction.reply(reply);
             }
         } catch (replyError) {
-            this._logger.error(
+            this._logger.err(
                 `Failed to send error reply for command "${interaction.commandName}":`,
-                replyError
+                replyError.stack
             );
         }
     }

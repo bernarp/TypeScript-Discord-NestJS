@@ -1,9 +1,9 @@
 /**
  * @file ConfigurationService.ts
  * @description Реализация единого сервиса конфигурации.
- * @version 3.1: Исправлена ошибка с пересозданием кэша при инициализации.
+ * @version 3.2: Рефакторинг для использования кастомного ILogger и его передачи в GuildConfigStorage.
  */
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import { IConfigurationService } from "@interface/IConfigurationService";
@@ -12,31 +12,29 @@ import { IPermissionGroup } from "@interface/IPermissionGroup";
 import { PermissionNode } from "@permissions/permissions.dictionary";
 import { GuildConfigStorage } from "./components.ConfigServices/GuildConfigStorage";
 import { GuildPermissionsManager } from "./components.ConfigServices/GuildPermissionsManager";
+import { ILogger } from "@interface/logger/ILogger";
 
 @Injectable()
 export class ConfigurationService implements IConfigurationService {
-    private readonly _logger = new Logger(ConfigurationService.name);
     private readonly _storage: GuildConfigStorage;
     private readonly _permissionsManager: GuildPermissionsManager;
 
     private _envConfig: Record<string, any>;
     private _guildsCache: Map<string, IGuildSettings> = new Map();
 
-    constructor() {
+    constructor(@Inject("ILogger") private readonly _logger: ILogger) {
+        // Стало
         this._envConfig = this._loadAndValidateEnv();
-        this._storage = new GuildConfigStorage();
+        // Передаем логгер в конструктор
+        this._storage = new GuildConfigStorage(this._logger);
         this._permissionsManager = new GuildPermissionsManager(
             this._guildsCache,
             () => this._save()
         );
     }
 
-    /**
-     * @method init
-     * @description Асинхронный метод для загрузки данных в кэш. Должен быть вызван фабрикой.
-     */
     public async init(): Promise<this> {
-        this._logger.log("Loading guild configurations into cache...");
+        this._logger.inf("Loading guild configurations into cache...");
 
         const loadedCache = await this._storage.load();
         this._guildsCache.clear();
@@ -44,7 +42,7 @@ export class ConfigurationService implements IConfigurationService {
             this._guildsCache.set(key, value);
         }
 
-        this._logger.log(
+        this._logger.inf(
             `Loaded ${this._guildsCache.size} guild configurations.`
         );
         return this;
@@ -96,7 +94,6 @@ export class ConfigurationService implements IConfigurationService {
             backupName ?? `guild-configs-backup-${timestamp}.json`;
         return this._storage.backup(finalBackupName);
     }
-
 
     public async getPermissionGroups(
         guildId: string
@@ -197,7 +194,10 @@ export class ConfigurationService implements IConfigurationService {
         try {
             await this._storage.save(this._guildsCache);
         } catch (error) {
-            this._logger.error("Failed to save guild configurations.", error);
+            this._logger.err(
+                "Failed to save guild configurations.",
+                error.stack
+            );
         }
     }
 

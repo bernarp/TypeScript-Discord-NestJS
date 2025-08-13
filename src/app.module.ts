@@ -1,10 +1,4 @@
-/**
- * @file app.module.ts
- * @description Корневой модуль приложения NestJS.
- * @version 2.1: Обновлен импорт CoreModule для асинхронной инициализации.
- */
-
-import { Module } from "@nestjs/common";
+import { Module, DynamicModule } from "@nestjs/common";
 import { CoreModule } from "@/core.module";
 import { ExampleModule } from "@modules.DiscordClient/example/example.module";
 import { HandlersModule as registerModule } from "./handlers.Global/handlers.module";
@@ -14,26 +8,34 @@ import { TicketGuildsystemModule } from "@modules.DiscordClient/ticket.GuildSyst
 import { PermissionGuard } from "./guards.NestJS/PermissionGuard";
 import { APP_GUARD } from "@nestjs/core";
 import { GuildConfigModule } from "./modules/module.GuildConfigManager/config.guild-config-manager.module";
-@Module({
-    imports: [
-        EventEmitterModule.forRoot(),
-        CoreModule.forRootAsync(),
+import { ILogger } from "@interface/logger/ILogger";
 
-        GuildConfigModule,
-        ExampleModule,
-        LoggingUserInteractionsGuildModule,
-        TicketGuildsystemModule,
-
-        registerModule.register({
-            imports: [ExampleModule, GuildConfigModule],
-        }),
-    ],
-    controllers: [],
-    providers: [
-        {
-            provide: APP_GUARD,
-            useClass: PermissionGuard,
-        },
-    ],
-})
-export class AppModule {}
+@Module({})
+export class AppModule {
+    static register(logger: ILogger): DynamicModule {
+        return {
+            module: AppModule,
+            imports: [
+                EventEmitterModule.forRoot(),
+                CoreModule.forRootAsync(logger),
+                GuildConfigModule,
+                ExampleModule,
+                LoggingUserInteractionsGuildModule,
+                TicketGuildsystemModule,
+                registerModule.register({
+                    imports: [ExampleModule, GuildConfigModule],
+                }),
+            ],
+            providers: [
+                {
+                    provide: APP_GUARD,
+                    useClass: PermissionGuard,
+                },
+                {
+                    provide: "ILogger",
+                    useValue: logger,
+                },
+            ],
+        };
+    }
+}

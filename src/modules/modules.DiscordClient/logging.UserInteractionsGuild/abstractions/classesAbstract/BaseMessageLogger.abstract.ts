@@ -1,10 +1,10 @@
 /**
  * @file BaseMessageLogger.abstract.ts
  * @description Базовый абстрактный класс для логгеров сообщений.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1: Рефакторинг для использования кастомного ILogger.
  */
 
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { Message, PartialMessage, EmbedBuilder, TextChannel } from "discord.js";
 import { Service } from "@core/abstractions/Service";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
@@ -12,24 +12,24 @@ import { IClient } from "@interface/IClient";
 import { IConfigurationService } from "@interface/IConfigurationService";
 import { IMessageLogger } from "../interfaces/IMessageLogger.interface";
 import { LogChannelType } from "../LogChannelType.enum";
+import { ILogger } from "@logger/";
 
 @Injectable()
 export abstract class BaseMessageLogger
     extends Service
     implements IMessageLogger
 {
-    protected readonly _logger: Logger;
-
     constructor(
         @Inject("IEmbedFactory")
         protected readonly _embedFactory: IEmbedFactory,
         @Inject("IClient")
         protected readonly _client: IClient,
         @Inject("IConfigurationService")
-        protected readonly _configService: IConfigurationService
+        protected readonly _configService: IConfigurationService,
+        @Inject("ILogger")
+        protected readonly _logger: ILogger
     ) {
         super();
-        this._logger = new Logger(this.constructor.name);
     }
 
     public isLoggable(message: Message | PartialMessage): boolean {
@@ -70,9 +70,9 @@ export abstract class BaseMessageLogger
 
             await logChannel.send({ embeds: [embed] });
         } catch (error) {
-            this._logger.error(
+            this._logger.err(
                 `Failed to send log message to channel ${channelId} for guild ${guildId}:`,
-                error
+                error.stack
             );
         }
     }

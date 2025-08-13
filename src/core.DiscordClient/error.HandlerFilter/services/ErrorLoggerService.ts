@@ -1,35 +1,25 @@
 /**
  * @file ErrorLoggerService.ts
- * @description Сервис для логирования ошибок с уникальным ID и сохранения их в файл.
+ * @description Сервис для логирования ошибок с уникальным ID и сохранением их в файл.
+ * @version 1.1: Рефакторинг для использования кастомного ILogger.
  */
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import { CommandInteraction } from "discord.js";
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { IErrorLog } from "@interface/error/IErrorLog";
-
-/**
- * @interface ErrorLog
- * @description Структура данных для лога ошибки.
- */
+import { ILogger } from "@logger/";
 
 @Injectable()
 export class ErrorLoggerService {
-    private readonly _logger = new Logger(ErrorLoggerService.name);
-    private readonly _logDirectory = path.resolve(process.cwd(), "logs");
+    private readonly _logDirectory = path.resolve(process.cwd(), "logs/errors"); // Рекомендую подпапку
 
-    constructor() {
+    constructor(@Inject("ILogger") private readonly _logger: ILogger) {
+        // Стало
         this._ensureLogDirectoryExists();
     }
 
-    /**
-     * @method log
-     * @description Основной метод, который обрабатывает, форматирует и сохраняет ошибку.
-     * @param {Error} exception - Перехваченное исключение.
-     * @param {CommandInteraction} interaction - Взаимодействие, в котором произошла ошибка.
-     * @returns {Promise<string>} Уникальный ID, присвоенный ошибке.
-     */
     public async log(
         exception: Error,
         interaction: CommandInteraction
@@ -62,28 +52,23 @@ export class ErrorLoggerService {
         try {
             const filePath = path.join(this._logDirectory, `${errorId}.json`);
             await fs.writeFile(filePath, JSON.stringify(logData, null, 4));
-            this._logger.log(`Successfully logged error with ID: ${errorId}`);
+            this._logger.inf(`Successfully logged error with ID: ${errorId}`);
         } catch (writeError) {
-            this._logger.error(
+            this._logger.err(
                 `Failed to write error log to file for ID: ${errorId}`,
-                writeError
+                writeError.stack
             );
         }
 
         return errorId;
     }
 
-    /**
-     * @private
-     * @method _ensureLogDirectoryExists
-     * @description Проверяет наличие директории для логов и создает ее, если она отсутствует.
-     */
     private async _ensureLogDirectoryExists(): Promise<void> {
         try {
             await fs.access(this._logDirectory);
         } catch (error) {
-            this._logger.log(
-                `Logs directory not found. Creating at: ${this._logDirectory}`
+            this._logger.inf(
+                `Error logs directory not found. Creating at: ${this._logDirectory}`
             );
             await fs.mkdir(this._logDirectory, { recursive: true });
         }

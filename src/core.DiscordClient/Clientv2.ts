@@ -2,7 +2,7 @@
  * @file Clientv2.ts
  * @description Реализация основного клиента Discord. Транслирует "сырые" события
  * от discord.js во внутреннюю шину событий приложения.
- * @version 3.0: Рефакторинг для использования единого IConfigurationService.
+ * @version 3.1: Рефакторинг для использования кастомного ILogger.
  */
 import {
     Client as BaseClient,
@@ -20,7 +20,7 @@ import {
     User,
     Partials,
 } from "discord.js";
-import { Injectable, Logger, Inject } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import { IClient } from "@interface/IClient";
 import { IConfigurationService } from "@interface/IConfigurationService";
 import { EventEmitter2 } from "@nestjs/event-emitter";
@@ -34,20 +34,23 @@ import { GuildMemberRemoveEvent } from "@event.EventBus/guild-member-remove.even
 import { GuildBanAddEvent } from "@event.EventBus/guild-ban-add.event";
 import { GuildBanRemoveEvent } from "@event.EventBus/guild-ban-remove.event";
 import { ReactionAddEvent } from "@event.EventBus/reaction-add.event";
+import { ILogger } from "@interface/logger/ILogger";
 
 @Injectable()
 export class Client extends BaseClient implements IClient {
-    private readonly _logger = new Logger(Client.name);
+    // Было: private readonly _logger = new Logger(Client.name);
 
     /**
      * @constructor
      * @param _configService - Единый сервис конфигурации для доступа к глобальным настройкам.
      * @param _eventEmitter - Шина событий NestJS для трансляции событий Discord.
+     * @param _logger - Кастомный сервис логирования.
      */
     constructor(
         @Inject("IConfigurationService")
         private readonly _configService: IConfigurationService,
-        private readonly _eventEmitter: EventEmitter2
+        private readonly _eventEmitter: EventEmitter2,
+        @Inject("ILogger") private readonly _logger: ILogger // Стало
     ) {
         super({
             intents: [
@@ -69,10 +72,10 @@ export class Client extends BaseClient implements IClient {
     }
 
     public async start(): Promise<void> {
-        this._logger.log("Attempting to log in to Discord...");
+        this._logger.inf("Attempting to log in to Discord...");
         this._registerDiscordEventHandlers();
         this.once(Events.ClientReady, () => {
-            this._logger.log(
+            this._logger.inf(
                 `Bot has successfully logged in as ${this.user?.tag}`
             );
         });
@@ -81,7 +84,7 @@ export class Client extends BaseClient implements IClient {
     }
 
     public async shutdown(): Promise<void> {
-        this._logger.log("Shutting down bot...");
+        this._logger.inf("Shutting down bot...");
         await this.destroy();
     }
 
@@ -98,7 +101,7 @@ export class Client extends BaseClient implements IClient {
             this._onMessageReactionAdd(r, u)
         );
 
-        this._logger.log("Discord event handlers registered.");
+        this._logger.inf("Discord event handlers registered.");
     }
 
     private _onMessageCreate(message: Message): void {
