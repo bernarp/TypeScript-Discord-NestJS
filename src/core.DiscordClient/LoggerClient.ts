@@ -5,7 +5,7 @@
  */
 
 import { Injectable, LoggerService } from "@nestjs/common";
-import { ILogger } from "@interface/logger/ILogger";
+import { ILogger } from "@logger/";
 import {
     ILogEntry,
     LogLevel,
@@ -265,4 +265,5 @@ export class CustomLoggerService implements ILogger, LoggerService {
         await Promise.resolve();
     }
 }
+
 
