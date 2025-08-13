@@ -19,7 +19,7 @@ export class InteractionManager {
 
     constructor(
         commandHandler: CommandHandler,
-        @Inject("ILogger") private readonly _logger: ILogger // Стало
+        @Inject("ILogger") private readonly _logger: ILogger // ILogger dd
     ) {
         this._handlers = [commandHandler];
     }
@@ -52,3 +52,4 @@ export class InteractionManager {
         );
     }
 }
+
