@@ -1,7 +1,8 @@
 /**
  * @file GroupRevoke.handler.ts
  * @description Обработчик для отзыва разрешения у группы.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { ChatInputCommandInteraction } from "discord.js";
@@ -9,7 +10,7 @@ import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionSubcommandHandler } from "../../abstractions/IPermissionSubcommandHandler";
 import { IPermissionService } from "../../abstractions/IPermissionService";
 import { PermissionNode } from "@permissions/permissions.dictionary";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 
 @Injectable()
 export class GroupRevokeHandler implements IPermissionSubcommandHandler {
@@ -33,7 +34,7 @@ export class GroupRevokeHandler implements IPermissionSubcommandHandler {
         ) as PermissionNode;
 
         try {
-            await this._configService.revokePermissionFromGroup(
+            await this._configService.permissions.revokePermissionFromGroup(
                 interaction.guildId,
                 groupKey,
                 permission

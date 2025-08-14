@@ -1,14 +1,15 @@
 /**
  * @file GroupDelete.handler.ts
  * @description Обработчик для удаления группы прав.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { ChatInputCommandInteraction } from "discord.js";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionSubcommandHandler } from "../../abstractions/IPermissionSubcommandHandler";
 import { IPermissionService } from "../../abstractions/IPermissionService";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 
 @Injectable()
 export class GroupDeleteHandler implements IPermissionSubcommandHandler {
@@ -28,13 +29,13 @@ export class GroupDeleteHandler implements IPermissionSubcommandHandler {
         const groupKey = interaction.options.getString("key", true);
 
         try {
-            const group = await this._configService.getPermissionGroup(
+            const group = await this._configService.permissions.getGroup(
                 interaction.guildId,
                 groupKey
             );
             if (!group) throw new Error(`Группа \`${groupKey}\` не найдена.`);
 
-            await this._configService.deletePermissionGroup(
+            await this._configService.permissions.deleteGroup(
                 interaction.guildId,
                 groupKey
             );

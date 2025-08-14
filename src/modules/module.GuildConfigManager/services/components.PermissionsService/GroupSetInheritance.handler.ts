@@ -1,14 +1,15 @@
 /**
  * @file GroupSetInheritance.handler.ts
  * @description Обработчик для настройки наследования групп прав.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { ChatInputCommandInteraction } from "discord.js";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionSubcommandHandler } from "../../abstractions/IPermissionSubcommandHandler";
 import { IPermissionService } from "../../abstractions/IPermissionService";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 
 @Injectable()
 export class GroupSetInheritanceHandler
@@ -39,13 +40,12 @@ export class GroupSetInheritanceHandler
             : [];
 
         try {
-            await this._configService.setGroupInheritance(
+            await this._configService.permissions.setGroupInheritance(
                 interaction.guildId,
                 groupKey,
                 inheritsFrom
             );
 
-            // Инвалидируем кэш прав
             this._permissionService.invalidateCache(interaction.guildId);
 
             const successEmbed = this._embedFactory.createSuccessEmbed({

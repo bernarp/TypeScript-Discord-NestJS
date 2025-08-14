@@ -2,7 +2,7 @@
  * @file Clientv2.ts
  * @description Реализация основного клиента Discord. Транслирует "сырые" события
  * от discord.js во внутреннюю шину событий приложения.
- * @version 3.2: Добавлена отправка события AppEvents.CLIENT_READY после успешной авторизации.
+ * @version 3.3 (Refactored for new ConfigService)
  * @author System
  */
 import {
@@ -23,7 +23,7 @@ import {
 } from "discord.js";
 import { Injectable, Inject } from "@nestjs/common";
 import { IClient } from "@interface/IClient";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { MessageCreateEvent } from "@event.EventBus/message-create.event";
@@ -80,7 +80,7 @@ export class Client extends BaseClient implements IClient {
             );
         });
 
-        const token = this._configService.getEnv<string>("TOKEN");
+        const token = this._configService.env.getEnv<string>("TOKEN");
         await this.login(token);
     }
 

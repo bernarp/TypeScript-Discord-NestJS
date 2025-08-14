@@ -1,14 +1,15 @@
 /**
  * @file GroupAssignRole.handler.ts
  * @description Обработчик для добавления/удаления роли из группы.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { ChatInputCommandInteraction, Role } from "discord.js";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionSubcommandHandler } from "../../abstractions/IPermissionSubcommandHandler";
 import { IPermissionService } from "../../abstractions/IPermissionService";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 
 @Injectable()
 export class GroupAssignRoleHandler implements IPermissionSubcommandHandler {
@@ -31,13 +32,13 @@ export class GroupAssignRoleHandler implements IPermissionSubcommandHandler {
 
         try {
             if (action === "add") {
-                await this._configService.addRoleToGroup(
+                await this._configService.permissions.addRoleToGroup(
                     interaction.guildId,
                     groupKey,
                     role.id
                 );
             } else {
-                await this._configService.removeRoleFromGroup(
+                await this._configService.permissions.removeRoleFromGroup(
                     interaction.guildId,
                     groupKey,
                     role.id

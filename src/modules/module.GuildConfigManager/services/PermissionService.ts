@@ -1,8 +1,10 @@
 /**
  * @file PermissionService.ts
  * @description Реализация сервиса для проверки прав доступа пользователей.
- * @version 3.1: Рефакторинг для использования кастомного ILogger.
+ * @version 4.1.0 (Refactored & Finalized)
+ * @author System
  */
+
 import { Inject, Injectable } from "@nestjs/common";
 import { GuildMember } from "discord.js";
 import { IPermissionService } from "../abstractions/IPermissionService";
@@ -11,9 +13,9 @@ import {
     Permissions,
 } from "@permissions/permissions.dictionary";
 import { ICachedPermissions } from "../abstractions/ICachedPermissions";
-import { IConfigurationService } from "@interface/IConfigurationService";
-import { IGuildSettings } from "@type/IGuildSettings";
-import { ILogger } from "@logger/";
+import { IPermissionRepository } from "@interface/config/repository/IPermissionRepository";
+import { ILogger } from "@interface/logger/ILogger";
+import { IPermissionGroup } from "@interface/IPermissionGroup";
 
 @Injectable()
 export class PermissionService implements IPermissionService {
@@ -21,11 +23,15 @@ export class PermissionService implements IPermissionService {
     private readonly CACHE_LIFETIME_MS = 5 * 60 * 1000; // 5 минут
 
     constructor(
-        @Inject("IConfigurationService")
-        private readonly _configService: IConfigurationService,
-        @Inject("ILogger") private readonly _logger: ILogger 
+        @Inject("IPermissionRepository")
+        private readonly _permissionRepo: IPermissionRepository,
+        @Inject("ILogger")
+        private readonly _logger: ILogger
     ) {}
 
+    /**
+     * @inheritdoc
+     */
     public async check(
         member: GuildMember,
         permission: PermissionNode
@@ -33,16 +39,13 @@ export class PermissionService implements IPermissionService {
         if (member.permissions.has("Administrator")) {
             return true;
         }
-
         const resolvedPermissions = await this._resolvePermissions(member);
-
-        if (
-            resolvedPermissions.has(Permissions.ADMIN_ALL) ||
-            resolvedPermissions.has(permission)
-        ) {
+        if (resolvedPermissions.has(Permissions.ADMIN_ALL)) {
             return true;
         }
-
+        if (resolvedPermissions.has(permission)) {
+            return true;
+        }
         const moduleWildcard = (permission.split(".")[0] +
             ".*") as PermissionNode;
         if (resolvedPermissions.has(moduleWildcard)) {
@@ -52,25 +55,32 @@ export class PermissionService implements IPermissionService {
         return false;
     }
 
+    /**
+     * @inheritdoc
+     */
     public invalidateCache(guildId: string, userId?: string): void {
         if (userId) {
             const cacheKey = `${guildId}:${userId}`;
-            this._cache.delete(cacheKey);
-            this._logger.debug(
-                `Cache invalidated for user ${userId} in guild ${guildId}.`
-            );
+            if (this._cache.delete(cacheKey)) {
+                this._logger.debug(
+                    `Permission cache invalidated for user ${userId} in guild ${guildId}.`
+                );
+            }
         } else {
+            let invalidatedCount = 0;
             for (const key of this._cache.keys()) {
                 if (key.startsWith(`${guildId}:`)) {
                     this._cache.delete(key);
+                    invalidatedCount++;
                 }
             }
-            this._logger.debug(
-                `Cache invalidated for entire guild ${guildId}.`
-            );
+            if (invalidatedCount > 0) {
+                this._logger.debug(
+                    `Permission cache invalidated for ${invalidatedCount} users in guild ${guildId}.`
+                );
+            }
         }
     }
-
     private async _resolvePermissions(
         member: GuildMember
     ): Promise<Set<PermissionNode>> {
@@ -80,34 +90,31 @@ export class PermissionService implements IPermissionService {
         if (cached && Date.now() - cached.timestamp < this.CACHE_LIFETIME_MS) {
             return cached.permissions;
         }
-
-        const guildSettings = await this._configService.getAllGuildSettings(
+        const allGroups = await this._permissionRepo.getAllGroups(
             member.guild.id
         );
-        const permissionGroups = guildSettings?.permissionGroups;
-        if (!permissionGroups) {
+        if (!allGroups) {
             return new Set();
         }
 
         const userRoleIds = new Set(member.roles.cache.keys());
-        const userGroups: string[] = [];
-
-        for (const groupKey in permissionGroups) {
-            const group = permissionGroups[groupKey];
+        const userGroupKeys: string[] = [];
+        for (const groupKey in allGroups) {
+            const group = allGroups[groupKey];
             if (
                 group.roleIds.some((roleId: string) => userRoleIds.has(roleId))
             ) {
-                userGroups.push(groupKey);
+                userGroupKeys.push(groupKey);
             }
         }
 
         const allPermissions = new Set<PermissionNode>();
         const visitedGroups = new Set<string>();
 
-        for (const groupKey of userGroups) {
+        for (const groupKey of userGroupKeys) {
             this._collectPermissionsRecursive(
                 groupKey,
-                permissionGroups,
+                allGroups,
                 allPermissions,
                 visitedGroups
             );
@@ -123,11 +130,19 @@ export class PermissionService implements IPermissionService {
 
     private _collectPermissionsRecursive(
         groupKey: string,
-        allGroups: NonNullable<IGuildSettings["permissionGroups"]>,
+        allGroups: Record<string, IPermissionGroup>,
         collected: Set<PermissionNode>,
         visited: Set<string>
     ): void {
-        if (visited.has(groupKey)) return;
+        if (visited.has(groupKey)) {
+            if (!visited.has(`warned_${groupKey}`)) {
+                this._logger.warn(
+                    `Circular permission inheritance detected for group: ${groupKey}`
+                );
+                visited.add(`warned_${groupKey}`);
+            }
+            return;
+        }
         visited.add(groupKey);
 
         const group = allGroups[groupKey];

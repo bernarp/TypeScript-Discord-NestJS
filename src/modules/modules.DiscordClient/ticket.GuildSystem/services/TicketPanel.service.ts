@@ -1,13 +1,16 @@
-// ЯВЛЯЕТСЯ ТЕСТОВЫМ ФАЙЛОМ.
-// ЯВЛЯЕТСЯ ТЕСТОВЫМ ФАЙЛОМ.
-// ЯВЛЯЕТСЯ ТЕСТОВЫМ ФАЙЛОМ.
+/**
+ * @file TicketPanel.service.ts
+ * @description Сервис, отвечающий за создание и восстановление панели для создания тикетов.
+ * @version 1.1.0 (Refactored for new ConfigService)
+ * @author System
+ */
 
 import { Inject, Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { PinnedMessageMissingEvent } from "@/event.EventBus/pinned-message-missing.event";
 import { ILogger } from "@interface/logger/ILogger";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 import { IClient } from "@interface/IClient";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { TextChannel } from "discord.js";
@@ -29,6 +32,7 @@ export class TicketPanelService {
         if (payload.messageType !== "ticketCreatePanel") {
             return;
         }
+
         const channelId = payload.channelId;
 
         if (!channelId) {
@@ -62,10 +66,10 @@ export class TicketPanelService {
 
             const newMessage = await channel.send({
                 embeds: [embed],
-                components: [],
+                components: [], // В реальной системе здесь будут кнопки
             });
 
-            await this._configService.setPinnedMessage(
+            await this._configService.guilds.setPinnedMessage(
                 payload.guildId,
                 "ticketCreatePanel",
                 {

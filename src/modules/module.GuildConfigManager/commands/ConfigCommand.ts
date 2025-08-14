@@ -1,7 +1,8 @@
 /**
  * @file ConfigCommand.ts
  * @description Команда для управления базовыми настройками сервера.
- * @version 6.0: Полный рефакторинг для использования IConfigurationService.
+ * @version 6.1 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable } from "@nestjs/common";
 import {
@@ -19,7 +20,7 @@ import { IGuildSettings } from "@type/IGuildSettings";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionService } from "../abstractions/IPermissionService";
 import { Permissions } from "@permissions/permissions.dictionary";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 
 const CONFIGURABLE_SETTINGS: ReadonlyArray<{
     key: keyof IGuildSettings;
@@ -141,9 +142,12 @@ export class ConfigCommand implements ICommand {
             true
         ) as TextChannel;
 
-        await this._configService.setGuildSettings(interaction.guildId!, {
-            [settingKey]: channel.id,
-        });
+        await this._configService.guilds.setGuildSettings(
+            interaction.guildId!,
+            {
+                [settingKey]: channel.id,
+            }
+        );
 
         const settingName =
             this._settingNames.get(settingKey) ?? `\`${settingKey}\``;
@@ -180,14 +184,15 @@ export class ConfigCommand implements ICommand {
             return;
         }
 
-        const config = await this._configService.getAllGuildSettings(
+        const config = await this._configService.guilds.getGuildSettings(
             interaction.guildId!
         );
+
         const fields: EmbedField[] = CONFIGURABLE_SETTINGS.map((setting) => {
             const value = config?.[setting.key];
             return {
                 name: `${setting.name} (\`${setting.key}\`)`,
-                value: value ? `<#${value}>` : "Не настроено",
+                value: value ? `<#${value}>` : "Не настроен",
                 inline: false,
             };
         });

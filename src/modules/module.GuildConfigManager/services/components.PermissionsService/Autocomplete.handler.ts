@@ -1,12 +1,14 @@
 /**
  * @file Autocomplete.handler.ts
  * @description Обработчик для автодополнений в команде /permissions.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { AutocompleteInteraction } from "discord.js";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 import { Permissions } from "@permissions/permissions.dictionary";
+import { ILogger } from "@interface/logger/ILogger";
 
 @Injectable()
 export class AutocompleteHandler {
@@ -14,7 +16,9 @@ export class AutocompleteHandler {
 
     constructor(
         @Inject("IConfigurationService")
-        private readonly _configService: IConfigurationService
+        private readonly _configService: IConfigurationService,
+        @Inject("ILogger")
+        private readonly _logger: ILogger
     ) {
         this._allPermissions = Object.values(Permissions);
     }
@@ -42,7 +46,7 @@ export class AutocompleteHandler {
 
             await interaction.respond(choices);
         } catch (error) {
-            console.error("Autocomplete handler failed:", error);
+            this._logger.err("Autocomplete handler failed:", error.stack);
             await interaction.respond([]);
         }
     }
@@ -63,7 +67,9 @@ export class AutocompleteHandler {
         guildId: string,
         query: string
     ): Promise<{ name: string; value: string }[]> {
-        const groups = await this._configService.getPermissionGroups(guildId);
+        const groups = await this._configService.permissions.getAllGroups(
+            guildId
+        );
         if (!groups) {
             return [];
         }
@@ -74,7 +80,7 @@ export class AutocompleteHandler {
         );
 
         return filtered.slice(0, 25).map((key) => ({
-            name: `${groups[key].name} (${key})`, 
+            name: `${groups[key].name} (${key})`,
             value: key,
         }));
     }

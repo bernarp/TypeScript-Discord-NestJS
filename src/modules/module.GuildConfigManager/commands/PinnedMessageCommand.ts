@@ -1,7 +1,7 @@
 /**
  * @file PinnedMessageCommand.ts
  * @description Команда для управления "самовосстанавливающимися" сообщениями-панелями.
- * @version 1.1.0: Добавлена подкоманда 'delete'.
+ * @version 1.2.0 (Refactored for new ConfigService)
  * @author System
  */
 import { Inject, Injectable } from "@nestjs/common";
@@ -20,7 +20,7 @@ import { Permissions } from "@permissions/permissions.dictionary";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { AppEvents } from "@/event.EventBus/app.events";
 import { PinnedMessageMissingEvent } from "@/event.EventBus/pinned-message-missing.event";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 import { IGuildSettings } from "@type/IGuildSettings";
 import { ILogger } from "@interface/logger/ILogger";
 
@@ -127,7 +127,7 @@ export class PinnedMessageCommand implements ICommand {
         ) as keyof Required<IGuildSettings>["pinnedMessages"];
         const channel = interaction.options.getChannel("channel", true);
 
-        await this._configService.deletePinnedMessage(
+        await this._configService.guilds.deletePinnedMessage(
             interaction.guildId,
             panelType
         );
@@ -164,7 +164,7 @@ export class PinnedMessageCommand implements ICommand {
             true
         ) as keyof Required<IGuildSettings>["pinnedMessages"];
 
-        await this._configService.deletePinnedMessage(
+        await this._configService.guilds.deletePinnedMessage(
             interaction.guildId,
             panelType
         );

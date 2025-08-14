@@ -1,7 +1,8 @@
 /**
  * @file Command.handler.ts
  * @description Специализированный обработчик для слеш-команд и их автодополнений.
- * @version 2.1: Рефакторинг для использования кастомного ILogger.
+ * @version 2.2 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import { DiscoveryService, Reflector } from "@nestjs/core";
@@ -12,7 +13,7 @@ import {
 } from "discord.js";
 import { IClient } from "@interface/IClient";
 import { ICommand } from "@interface/ICommand";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 import { COMMAND_METADATA_KEY } from "@decorators/command.decorator";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { AppEvents } from "@/event.EventBus/app.events";
@@ -70,10 +71,7 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
                 `Error processing interaction for command "${command.data.name}":`,
                 error.stack
             );
-
-            if (interaction.isChatInputCommand()) {
-                await this._replyWithError(interaction);
-            }
+            throw error;
         }
     }
 
@@ -116,7 +114,8 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
     }
 
     private async _registerCommands(): Promise<void> {
-        const guildId = this._configService.getEnv<string>("GUILD_ID");
+        const guildId = this._configService.env.getEnv<string>("GUILD_ID");
+
         if (!guildId) {
             this._logger.err(
                 "GUILD_ID is not specified in .env config. Skipping command registration."
@@ -138,27 +137,6 @@ export class CommandHandler implements IInteractionHandler, OnModuleInit {
             this._logger.err(
                 "An error occurred while registering commands:",
                 error.stack
-            );
-        }
-    }
-
-    private async _replyWithError(
-        interaction: ChatInputCommandInteraction
-    ): Promise<void> {
-        const reply = {
-            content: "An error occurred while executing the command.",
-            ephemeral: true,
-        };
-        try {
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(reply);
-            } else {
-                await interaction.reply(reply);
-            }
-        } catch (replyError) {
-            this._logger.err(
-                `Failed to send error reply for command "${interaction.commandName}":`,
-                replyError.stack
             );
         }
     }

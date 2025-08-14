@@ -1,7 +1,8 @@
 /**
  * @file PermissionsCommand.ts
  * @description Команда для управления системой прав доступа.
- * @version 6.0: Полный рефакторинг для использования IConfigurationService.
+ * @version 6.1 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import {
@@ -27,7 +28,7 @@ import { GroupRevokeHandler } from "../services/components.PermissionsService/Gr
 import { AutocompleteHandler } from "../services/components.PermissionsService/Autocomplete.handler";
 import { IPermissionService } from "../abstractions/IPermissionService";
 import { GroupSetInheritanceHandler } from "../services/components.PermissionsService/GroupSetInheritance.handler";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 
 @Command()
 @Injectable()
@@ -192,7 +193,6 @@ export class PermissionsCommand implements ICommand, OnModuleInit {
         private readonly _configService: IConfigurationService,
         @Inject("IPermissionService")
         private readonly _permissionService: IPermissionService,
-        // Handlers are injected by NestJS DI
         private readonly _groupCreateHandler: GroupCreateHandler,
         private readonly _groupDeleteHandler: GroupDeleteHandler,
         private readonly _groupAssignRoleHandler: GroupAssignRoleHandler,
@@ -260,18 +260,14 @@ export class PermissionsCommand implements ICommand, OnModuleInit {
         if (handler) {
             await handler.execute(interaction);
         } else {
-            const errorEmbed = this._embedFactory.createErrorEmbed({
-                description: "Не удалось найти обработчик для этой подкоманды.",
-                context: { user: interaction.user, guild: interaction.guild },
-            });
-            await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+            throw new Error(`No handler found for subcommand: ${subcommand}`);
         }
     }
 
     private async _handleView(
         interaction: ChatInputCommandInteraction
     ): Promise<void> {
-        const groups = await this._configService.getPermissionGroups(
+        const groups = await this._configService.permissions.getAllGroups(
             interaction.guildId!
         );
 

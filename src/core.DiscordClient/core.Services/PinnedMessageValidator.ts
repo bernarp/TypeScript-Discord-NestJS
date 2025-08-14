@@ -1,13 +1,13 @@
 /**
  * @file PinnedMessageValidator.service.ts
- * @version 1.3.0: Теперь передает channelId в событие PinnedMessageMissingEvent для авто-восстановления.
+ * @version 1.4.0 (Refactored for new ConfigService)
  * @author System
  */
 
 import { Inject, Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import { IClient } from "@interface/IClient";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 import { ILogger } from "@interface/logger/ILogger";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { AppEvents } from "@/event.EventBus/app.events";
@@ -33,7 +33,8 @@ export class PinnedMessageValidatorService {
             "Client is ready. Starting validation of all pinned messages..."
         );
 
-        const allGuildConfigs = await this._configService.getAllGuildConfigs();
+        const allGuildConfigs =
+            await this._configService.guilds.getAllGuildSettings();
 
         if (allGuildConfigs.length === 0) {
             this._logger.inf(
@@ -82,7 +83,11 @@ export class PinnedMessageValidatorService {
                     `Pinned message '${type}' for guild ${guildId} is MISSING. Emitting event for auto-recreation...`
                 );
 
-                await this._configService.deletePinnedMessage(guildId, type);
+                await this._configService.guilds.deletePinnedMessage(
+                    guildId,
+                    type
+                );
+
                 this._eventEmitter.emit(
                     AppEvents.PINNED_MESSAGE_MISSING,
                     new PinnedMessageMissingEvent(
@@ -113,6 +118,7 @@ export class PinnedMessageValidatorService {
             return true;
         } catch (error) {
             if (error.code === 10008) {
+                // Unknown Message
                 return false;
             } else {
                 this._logger.err(

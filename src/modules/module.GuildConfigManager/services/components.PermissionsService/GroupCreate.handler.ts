@@ -1,13 +1,14 @@
 /**
  * @file GroupCreate.handler.ts
  * @description Обработчик для создания новой группы прав.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { ChatInputCommandInteraction } from "discord.js";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IPermissionSubcommandHandler } from "../../abstractions/IPermissionSubcommandHandler";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 
 @Injectable()
 export class GroupCreateHandler implements IPermissionSubcommandHandler {
@@ -27,7 +28,6 @@ export class GroupCreateHandler implements IPermissionSubcommandHandler {
             .toLowerCase();
         const groupName = interaction.options.getString("name", true);
 
-        // Валидация системного имени группы
         if (!/^[a-z0-9_]{3,32}$/.test(groupKey)) {
             const errorEmbed = this._embedFactory.createErrorEmbed({
                 description:
@@ -39,7 +39,7 @@ export class GroupCreateHandler implements IPermissionSubcommandHandler {
         }
 
         try {
-            await this._configService.createPermissionGroup(
+            await this._configService.permissions.createGroup(
                 interaction.guildId,
                 groupKey,
                 groupName

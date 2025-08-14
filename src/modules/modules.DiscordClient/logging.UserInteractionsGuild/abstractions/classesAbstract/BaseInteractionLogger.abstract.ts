@@ -1,7 +1,8 @@
 /**
  * @file BaseInteractionLogger.abstract.ts
  * @description Базовый абстрактный класс для логгеров взаимодействий.
- * @version 2.1: Рефакторинг для использования кастомного ILogger.
+ * @version 2.2 (Refactored for new ConfigService)
+ * @author System
  */
 
 import { Inject, Injectable } from "@nestjs/common";
@@ -9,7 +10,7 @@ import { BaseInteraction, EmbedBuilder, TextChannel } from "discord.js";
 import { Service } from "@core/abstractions/Service";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IClient } from "@interface/IClient";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 import { IInteractionLogger } from "../interfaces/IInteractionLogger.interface";
 import { LogChannelType } from "../LogChannelType.enum";
 import { InteractionCreateEvent } from "@/event.EventBus/interaction-create.eventv2";
@@ -20,7 +21,6 @@ export abstract class BaseInteractionLogger
     extends Service
     implements IInteractionLogger
 {
-
     constructor(
         @Inject("IEmbedFactory")
         protected readonly _embedFactory: IEmbedFactory,
@@ -29,7 +29,7 @@ export abstract class BaseInteractionLogger
         @Inject("IConfigurationService")
         protected readonly _configService: IConfigurationService,
         @Inject("ILogger")
-        protected readonly _logger: ILogger 
+        protected readonly _logger: ILogger
     ) {
         super();
     }
@@ -37,14 +37,16 @@ export abstract class BaseInteractionLogger
     public abstract onInteractionCreated(
         payload: InteractionCreateEvent
     ): Promise<void>;
-
     public abstract createLogEmbed(interaction: BaseInteraction): EmbedBuilder;
 
     protected async getLogChannelId(
         guildId: string,
         channelType: LogChannelType
     ): Promise<string | undefined> {
-        return this._configService.getGuildSetting(guildId, channelType);
+        const settings = await this._configService.guilds.getGuildSettings(
+            guildId
+        );
+        return settings?.[channelType];
     }
 
     protected async sendLog(

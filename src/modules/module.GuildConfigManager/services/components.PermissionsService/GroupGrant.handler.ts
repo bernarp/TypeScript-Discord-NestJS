@@ -1,7 +1,8 @@
 /**
  * @file GroupGrant.handler.ts
  * @description Обработчик для выдачи разрешения группе.
- * @version 2.0: Рефакторинг для использования IConfigurationService.
+ * @version 2.1 (Refactored for new ConfigService)
+ * @author System
  */
 import { Inject, Injectable } from "@nestjs/common";
 import { ChatInputCommandInteraction } from "discord.js";
@@ -12,7 +13,7 @@ import {
     Permissions,
     PermissionNode,
 } from "@permissions/permissions.dictionary";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 
 @Injectable()
 export class GroupGrantHandler implements IPermissionSubcommandHandler {
@@ -45,7 +46,7 @@ export class GroupGrantHandler implements IPermissionSubcommandHandler {
         }
 
         try {
-            await this._configService.grantPermissionToGroup(
+            await this._configService.permissions.grantPermissionToGroup(
                 interaction.guildId,
                 groupKey,
                 permission

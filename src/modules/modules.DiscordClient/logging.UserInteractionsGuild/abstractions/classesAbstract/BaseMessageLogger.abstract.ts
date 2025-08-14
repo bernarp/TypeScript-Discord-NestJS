@@ -1,7 +1,8 @@
 /**
  * @file BaseMessageLogger.abstract.ts
  * @description Базовый абстрактный класс для логгеров сообщений.
- * @version 2.1: Рефакторинг для использования кастомного ILogger.
+ * @version 2.2 (Refactored for new ConfigService)
+ * @author System
  */
 
 import { Inject, Injectable } from "@nestjs/common";
@@ -9,7 +10,7 @@ import { Message, PartialMessage, EmbedBuilder, TextChannel } from "discord.js";
 import { Service } from "@core/abstractions/Service";
 import { IEmbedFactory } from "@interface/utils/IEmbedFactory";
 import { IClient } from "@interface/IClient";
-import { IConfigurationService } from "@interface/IConfigurationService";
+import { IConfigurationService } from "@interface/config/IConfigurationService";
 import { IMessageLogger } from "../interfaces/IMessageLogger.interface";
 import { LogChannelType } from "../LogChannelType.enum";
 import { ILogger } from "@logger/";
@@ -50,7 +51,10 @@ export abstract class BaseMessageLogger
         guildId: string,
         channelType: LogChannelType
     ): Promise<string | undefined> {
-        return this._configService.getGuildSetting(guildId, channelType);
+        const settings = await this._configService.guilds.getGuildSettings(
+            guildId
+        );
+        return settings?.[channelType];
     }
 
     protected async sendLog(
