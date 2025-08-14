@@ -56,7 +56,6 @@ export class JsonStorageStrategy<T extends Map<any, any>>
         const tempFilePath = this._filePath + ".tmp";
 
         try {
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ: Преобразуем Map в объект перед сериализацией ---
             const dataToSave = Object.fromEntries(data);
             const jsonString = JSON.stringify(dataToSave, null, 4);
             await fs.writeFile(tempFilePath, jsonString, "utf-8");
@@ -104,3 +103,4 @@ export class JsonStorageStrategy<T extends Map<any, any>>
         }
     }
 }
+
