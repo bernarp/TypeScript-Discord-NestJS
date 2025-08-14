@@ -11,8 +11,6 @@ import { EmbedFactory } from "./utils.Global/EmbedFactory";
 import { ErrorLoggerService } from "./core.DiscordClient/error.HandlerFilter/services/ErrorLoggerService";
 import { PinnedMessageValidatorService } from "./core.DiscordClient/core.Services/PinnedMessageValidator";
 import { ILogger } from "./core.DiscordClient/abstractions/interface/logger/ILogger";
-
-// --- Новые импорты для рефакторинга ---
 import { IStorageStrategy } from "./core.DiscordClient/abstractions/interface/config/storage/IStorageStrategy";
 import { JsonStorageStrategy } from "./core.DiscordClient/core.Services/components.ConfigService/storage/JsonStorageStrategy";
 import { IEnvRepository } from "./core.DiscordClient/abstractions/interface/config/repository/IEnvRepository";
@@ -123,3 +121,4 @@ export class CoreModule {
         };
     }
 }
+
