@@ -104,7 +104,6 @@ export class CoreModule {
                 { provide: "IClient", useClass: Client },
                 { provide: "IEmbedFactory", useClass: EmbedFactory },
                 ErrorLoggerService,
-                PinnedMessageValidatorService,
             ],
             exports: [
                 "IConfigurationService",
