@@ -35,33 +35,30 @@
          * Эти опции позволяют использовать "чистые" импорты вместо относительных путей вроде '../../'.
          */
         "paths": {
-            // TODO: Можно добавить больше псевдонимов для модулей по мере роста проекта.
-            // Например: "@users/*": ["src/users/*"]
-            "@/*": ["src/*"],
-            "@interface/*": ["src/core.DiscordClient/abstractions/interface/*"],
-            "@type/*": ["src/core.DiscordClient/abstractions/types/*"],
+            "@/*": ["src/*"], // Общий доступ к корню src/
+            "@common/*": ["src/common/*"], // Для общих утилит, декораторов, базовых интерфейсов
+            "@core/*": ["src/core/*"], // Для доступа к ядру (клиент, системный логгер)
+            "@config/*": ["src/config/*"], // Для доступа к модулю конфигурации и его компонентам
+            "@events/*": ["src/events/*"], // Для доступа к событиям и их определениям
+            "@interactions/*": ["src/interactions/*"], // Для доступа к менеджерам взаимодействий
+            "@modules/*": ["src/modules/*"], // Для доступа к корневой папке бизнес-модулей
 
-            "@handlers.Global/*": ["src/handlers.Global/*"],
-            "@core/*": ["src/core.DiscordClient/*"],
-            "@decorators/*": ["src/decorators.NestJS/*"],
-            "@modules.DiscordClient/*": ["src/modules/modules.DiscordClient/*"],
-            "@modules.GoogleSheets/*": ["src/modules/modules.GoogleSheets/*"],
-            "@module/*": ["src/modules/*"],
-            "@mappers.PrismaDatabase/*": [
-                "src/core.DiscordClient/domain/mappers.PrismaDatabase"
-            ],
-            "@entities.PrismaDatabase/*": [
-                "src/core.DiscordClient/domain/entities.PrismaDatabase/*"
-            ],
-            "@utils.Global/*": ["src/utils.Global/*"],
-            "@event.EventBus/*": ["src/event.EventBus/*"],
-            "@err/*": ["src/core.DiscordClient/error.HandlerFilter/*"],
-            "@permissions/*": [
-                "src/core.DiscordClient/domain/permissions.DiscordClient/*"
-            ],
-            "@guards/*": ["src/guards.NestJS/*"],
-            "@logger/*": ["src/core.DiscordClient/abstractions/interface/logger/ILogger.ts"]
-        }
+            "@settings/*": ["src/modules/SettingsManager/*"],
+            "@guild-logging/*": ["src/modules/GuildLoggingInteractions/*"],
+            "@tickets/*": ["src/modules/TicketsSystem/*"],
+            "@example/*": ["src/modules/Example/*"],
+
+            "@decorators/*": ["src/common/decorators/*"], // Удобный шорткат для декораторов
+            "@guards/*": ["src/common/guards/*"], // Удобный шорткат для гардов
+            "@utils/*": ["src/common/utils/*"], // Удобный шорткат для утилит
+            "@interfaces/*": ["src/common/interfaces/*"], // Шорткат для самых базовых интерфейсов
+            "@enums/*": ["src/common/enums/*"], // Шорткат для глобальных enums
+            "@type/*": ["src/common/types/*"], // Шорткат для глобальных types
+            "@error-handling/*": ["src/error-handling/*"], // Шорткат для обработчиков ошибок
+            "@logger": ["src/core/logger/ILogger.ts"],
+            "@client": ["src/core/client/IClient.ts"]
+        }   
+
     },
     // "include" - массив путей, которые должны быть включены в компиляцию.
     // В данном случае, это все файлы в директории 'src'.
