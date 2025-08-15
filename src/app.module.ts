@@ -9,6 +9,7 @@ import { PermissionGuard } from "@guards/PermissionGuard";
 import { APP_GUARD } from "@nestjs/core";
 import { GuildConfigModule } from "@settings/config.guild-config-manager.module";
 import { ILogger } from "@logger";
+import { PermissionsModule } from "@permissions/permissions.module";
 
 @Module({})
 export class AppModule {
@@ -18,12 +19,19 @@ export class AppModule {
             imports: [
                 EventEmitterModule.forRoot(),
                 CoreModule.forRootAsync(logger),
+
                 GuildConfigModule,
+                PermissionsModule,
                 ExampleModule,
                 LoggingUserInteractionsGuildModule,
                 TicketGuildsystemModule,
+
                 registerModule.register({
-                    imports: [ExampleModule, GuildConfigModule],
+                    imports: [
+                        ExampleModule,
+                        GuildConfigModule,
+                        PermissionsModule,
+                    ],
                 }),
             ],
             providers: [
