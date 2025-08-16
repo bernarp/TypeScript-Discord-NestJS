@@ -4,6 +4,7 @@ import { InteractionLoggerDeleteMessageUser } from "./services/InteractionLogger
 import { InteractionLoggerCreateMessageUser } from "./services/InteractionLoggerCreateMessageUser";
 import { InteractionLoggerUpdateMessageUser } from "./services/InteractionLoggerUpdateMessageUser";
 import { InteractionLoggerAll } from "./services/InteractionLoggerAll";
+import { TicketTranscriptLogger } from "./services/TicketTranscriptLogger.service";
 
 @Module({
     imports: [CoreModule],
@@ -12,6 +13,7 @@ import { InteractionLoggerAll } from "./services/InteractionLoggerAll";
         InteractionLoggerCreateMessageUser,
         InteractionLoggerUpdateMessageUser,
         InteractionLoggerAll,
+        TicketTranscriptLogger,
     ],
     exports: [],
 })

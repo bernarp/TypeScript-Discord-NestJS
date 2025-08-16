@@ -8,4 +8,5 @@ export enum LogChannelType {
     MESSAGE_CREATE = "logChannelMessageSendId",
     MESSAGE_DELETE = "logChannelMessageDeleteId",
     MESSAGE_UPDATE = "logChannelMessageEditId",
+    TICKET_TRANSCRIPTS = "logChannelTicketTranscriptsId",
 }
