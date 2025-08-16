@@ -1,7 +1,7 @@
 /**
  * @file Ticket.service.ts
  * @description Реализация сервиса бизнес-логики для управления тикетами.
- * @version 2.3.0 (Added channel deletion after a 5-second delay)
+ * @version 2.5.0 (Added creation timestamp to channel name)
  */
 
 import { Inject, Injectable } from "@nestjs/common";
@@ -23,6 +23,11 @@ import { TicketType } from "..//enums/TicketType.enum";
 import { createWelcomeTicketEmbed } from "../ui/embeds/createWelcomeTicketEmbed";
 import { createTicketActionRow } from "../ui/components/createTicketActionRow";
 import { createTicketClosedEmbed } from "../ui/embeds/createTicketClosedEmbed";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { AppEvents } from "@events/app.events";
+import { TicketClosedEvent } from "@events/ticket-closed.event";
+import * as path from "path";
+import * as fs from "fs/promises";
 
 @Injectable()
 export class TicketService implements ITicketService {
@@ -33,7 +38,8 @@ export class TicketService implements ITicketService {
         private readonly _settingsRepo: ITicketSettingsRepository,
         @Inject("IClient") private readonly _client: IClient,
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory,
-        @Inject("ILogger") private readonly _logger: ILogger
+        @Inject("ILogger") private readonly _logger: ILogger,
+        private readonly _eventEmitter: EventEmitter2
     ) {}
 
     public async createTicket(
@@ -60,6 +66,17 @@ export class TicketService implements ITicketService {
                 `Вы достигли лимита в ${maxTickets} открытых тикетов.`
             );
         }
+
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, "0");
+        const month = String(now.getMonth() + 1).padStart(2, "0"); // Месяцы начинаются с 0
+        const year = now.getFullYear();
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        const formattedDate = `${day}-${month}-${year}-${hours}-${minutes}`;
+        const channelName = `${type.toLowerCase()}-${
+            member.user.username
+        }-${formattedDate}`;
 
         const permissionOverwrites: OverwriteResolvable[] = [
             {
@@ -96,7 +113,7 @@ export class TicketService implements ITicketService {
         ];
 
         const channel = await guild.channels.create({
-            name: `${type.toLowerCase()}-${member.user.username}`,
+            name: channelName,
             type: ChannelType.GuildText,
             parent: categoryId,
             permissionOverwrites,
@@ -156,17 +173,48 @@ export class TicketService implements ITicketService {
         await channel.send({ embeds: [closeEmbed] });
         this._logger.inf(`Ticket ${channel.id} closed by ${member.user.tag}.`);
 
-        // VVV НОВЫЙ БЛОК: Логика отложенного удаления VVV
+        const transcriptPath = path.join(
+            process.cwd(),
+            "tmp",
+            "transcripts",
+            `${channel.id}.log`
+        );
+        try {
+            await fs.access(transcriptPath, fs.constants.R_OK);
+
+            const creator = await this._client.users.fetch(ticket.creatorId);
+            const closer = member.user;
+
+            const eventPayload = new TicketClosedEvent(
+                channel.guild.id,
+                transcriptPath,
+                creator,
+                closer,
+                channel.name,
+                ticket.createdAt
+            );
+            this._eventEmitter.emit(AppEvents.TICKET_CLOSED, eventPayload);
+        } catch (error) {
+            if (error.code === "ENOENT") {
+                this._logger.warn(
+                    `Transcript file for ticket ${channel.id} not found. It might be an empty ticket. Skipping event emission.`
+                );
+            } else {
+                this._logger.err(
+                    `Failed to process transcript for TicketClosedEvent for ticket ${channel.id}`,
+                    error.stack
+                );
+            }
+        }
+
         this._logger.inf(
             `Scheduling deletion for channel ${channel.id} in 5 seconds.`
         );
-
         setTimeout(async () => {
             try {
                 await channel.delete(
                     `Тикет закрыт пользователем ${member.user.tag}`
                 );
-                // После успешного удаления канала, удаляем запись из нашей БД
                 await this._ticketRepo.delete(channel.id);
                 this._logger.inf(
                     `Successfully deleted channel and ticket data for ${channel.id}.`

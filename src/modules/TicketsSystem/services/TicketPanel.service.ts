@@ -14,7 +14,6 @@ import { IConfigurationService } from "@settings/abstractions/IConfigurationServ
 import { IClient } from "@client";
 import { IEmbedFactory } from "@interfaces/IEmbedFactory";
 import { TextChannel } from "discord.js";
-// <<< ИМПОРТЫ UI ФАБРИК >>>
 import { createTicketPanelEmbed } from "../ui/embeds/createTicketPanelEmbed";
 import { createTicketPanelComponents } from "../ui/components/createTicketPanelComponents";
 

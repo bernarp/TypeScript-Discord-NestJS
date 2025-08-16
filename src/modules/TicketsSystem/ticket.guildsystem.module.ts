@@ -21,6 +21,7 @@ import { TicketRepository } from "./repositories/Ticket.repository";
 // Сервисы
 import { TicketService } from "./services/Ticket.service";
 import { TicketPanelService } from "./services/TicketPanel.service";
+import { TicketTranscriptService } from "./services/TicketTranscript.service";
 
 // Команды
 import { TicketSettingsCommand } from "./commands/TicketSettings.command";
@@ -88,6 +89,7 @@ import { CloseTicketButtonHandler } from "./handlers/CloseTicketButton.handler";
         TicketCommand,
         CreateTicketButtonHandler,
         CloseTicketButtonHandler,
+        TicketTranscriptService
     ],
     exports: ["ITicketService"],
 })
