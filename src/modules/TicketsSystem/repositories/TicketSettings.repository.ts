@@ -23,7 +23,6 @@ export class TicketSettingsRepository implements ITicketSettingsRepository {
     ) {}
 
     public async init(): Promise<this> {
-        // ... (метод init остается без изменений)
         this._logger.inf(
             "Initializing TicketSettingsRepository: loading data into cache..."
         );
@@ -68,3 +67,4 @@ export class TicketSettingsRepository implements ITicketSettingsRepository {
         return updatedSettings;
     }
 }
+
