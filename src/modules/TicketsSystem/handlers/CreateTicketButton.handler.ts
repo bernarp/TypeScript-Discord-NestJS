@@ -7,7 +7,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import {
     ActionRowBuilder,
     ButtonInteraction,
-    GuildMember, // <<< ИСПРАВЛЕНО
+    GuildMember, 
     StringSelectMenuBuilder,
     StringSelectMenuInteraction,
     StringSelectMenuOptionBuilder,
@@ -108,3 +108,4 @@ export class CreateTicketButtonHandler implements IButtonHandler {
     }
     // ^^^ ИСПРАВЛЕННЫЙ БЛОК ^^^
 }
+
