@@ -11,7 +11,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { CommandInteraction, GuildMember } from "discord.js";
-import { IPermissionService } from "@settings/abstractions/IPermissionService";
+import { IPermissionService } from "@permissions/interfaces/IPermissionService";
 import {
     PERMISSIONS_METADATA_KEY,
     PermissionRequirements,

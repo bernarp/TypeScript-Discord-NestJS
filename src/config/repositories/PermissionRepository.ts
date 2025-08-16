@@ -6,8 +6,8 @@
  */
 
 import { Inject, Injectable } from "@nestjs/common";
-import { IPermissionGroup } from "@settings/abstractions/IPermissionGroup";
-import { PermissionNode } from "@settings/permissions.dictionary";
+import { IPermissionGroup } from "@permissions/interfaces/IPermissionGroup";
+import { PermissionNode } from "@permissions/permissions.dictionary";
 import { IPermissionRepository } from "@config/interfaces/IPermissionRepository";
 import { IGuildSettingsRepository } from "@config/interfaces/IGuildSettingsRepository";
 import { ILogger } from "@logger";

@@ -427,5 +427,12 @@ export const AppEvents = {
      * @description Срабатывает, когда PinnedMessageValidator не находит настроенное сообщение.
      * @payload {PinnedMessageMissingEvent}
      */
-    PINNED_MESSAGE_MISSING: "pinned.message.missing",
+    PINNED_MESSAGE_MISSING: "pinned.message.missing"
+    ,
+    /**
+     * @event ticket.closed
+     * @description Срабатывает после закрытия тикета, но перед удалением канала.
+     * @payload {TicketClosedEvent}
+     */
+    TICKET_CLOSED: "ticket.closed",
 };

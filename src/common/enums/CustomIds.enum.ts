@@ -30,12 +30,31 @@ export const CustomIds = {
      */
     CANCEL_ACTION_BUTTON: "cancel_action",
 
-    /**
+     /**
      * @id_pattern ticket_action_{action}_{ticketId}
      * @description Префикс для кнопок, связанных с действиями над тикетами.
      * @example 'ticket_action_close_12345'
      */
     TICKET_ACTION_PREFIX: "ticket_action_",
+
+    /**
+     * @id create_ticket_button
+     * @description Кнопка на панели для создания нового тикета.
+     * @handler CreateTicketButtonHandler
+     */
+    CREATE_TICKET_BUTTON: "create_ticket_button",
+
+    /**
+     * @id create_ticket_modal
+     * @description Модальное окно, запрашивающее тип тикета перед созданием.
+     */
+    CREATE_TICKET_MODAL: "create_ticket_modal",
+
+    /**
+     * @id create_ticket_type_select
+     * @description Выпадающее меню внутри модального окна для выбора типа тикета.
+     */
+    CREATE_TICKET_TYPE_SELECT: "create_ticket_type_select",
 } as const;
 
 /**

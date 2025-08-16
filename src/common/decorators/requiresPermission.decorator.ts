@@ -5,7 +5,7 @@
  */
 
 import { SetMetadata } from "@nestjs/common";
-import { PermissionNode } from "@settings/permissions.dictionary";
+import { PermissionNode } from "@permissions/permissions.dictionary";
 
 /**
  * @const PERMISSIONS_METADATA_KEY

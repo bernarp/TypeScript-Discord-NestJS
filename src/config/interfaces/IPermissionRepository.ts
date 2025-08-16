@@ -5,8 +5,8 @@
  * @author System
  */
 
-import { IPermissionGroup } from "@settings/abstractions/IPermissionGroup";
-import { PermissionNode } from "@settings/permissions.dictionary";
+import { IPermissionGroup } from "@permissions/interfaces/IPermissionGroup";
+import { PermissionNode } from "@permissions/permissions.dictionary";
 
 /**
  * @interface IPermissionRepository
