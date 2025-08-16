@@ -85,7 +85,6 @@ export class TicketCommand implements ICommand {
                 description: error.message,
                 context: { user: interaction.user, guild: interaction.guild },
             });
-            // Используем followUp, если deferReply уже был вызван
             if (interaction.deferred || interaction.replied) {
                 await interaction.followUp({
                     embeds: [errorEmbed],
@@ -157,3 +156,4 @@ export class TicketCommand implements ICommand {
         await interaction.editReply({ embeds: [embed] });
     }
 }
+
