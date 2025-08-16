@@ -33,11 +33,6 @@ export class CreateTicketButtonHandler implements IButtonHandler {
         @Inject("IEmbedFactory") private readonly _embedFactory: IEmbedFactory
     ) {}
 
-    // VVV ИСПРАВЛЕННЫЙ БЛОК VVV
-    /**
-     * @inheritdoc
-     * @description Теперь этот метод не показывает модальное окно, а отправляет эфемерное сообщение с выбором типа тикета.
-     */
     public async execute(interaction: ButtonInteraction): Promise<void> {
         const typeSelect = new StringSelectMenuBuilder()
             .setCustomId(CustomIds.CREATE_TICKET_TYPE_SELECT)
@@ -106,6 +101,6 @@ export class CreateTicketButtonHandler implements IButtonHandler {
             await interaction.editReply({ embeds: [errorEmbed] });
         }
     }
-    // ^^^ ИСПРАВЛЕННЫЙ БЛОК ^^^
 }
+
 
