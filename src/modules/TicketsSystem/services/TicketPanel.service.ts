@@ -1,7 +1,7 @@
 /**
  * @file TicketPanel.service.ts
  * @description Сервис, отвечающий за создание и восстановление панели для создания тикетов.
- * @version 1.1.0 (Refactored for new ConfigService)
+ * @version 2.1.0 (Refactored with UI layer)
  * @author System
  */
 
@@ -14,6 +14,9 @@ import { IConfigurationService } from "@settings/abstractions/IConfigurationServ
 import { IClient } from "@client";
 import { IEmbedFactory } from "@interfaces/IEmbedFactory";
 import { TextChannel } from "discord.js";
+// <<< ИМПОРТЫ UI ФАБРИК >>>
+import { createTicketPanelEmbed } from "../ui/embeds/createTicketPanelEmbed";
+import { createTicketPanelComponents } from "../ui/components/createTicketPanelComponents";
 
 @Injectable()
 export class TicketPanelService {
@@ -32,20 +35,13 @@ export class TicketPanelService {
         if (payload.messageType !== "ticketCreatePanel") {
             return;
         }
-
         const channelId = payload.channelId;
-
         if (!channelId) {
             this._logger.warn(
-                `Cannot auto-recreate ticket panel for guild ${payload.guildId} because the target channel is unknown. ` +
-                    `Use the /pinned-message command to create it manually.`
+                `Cannot auto-recreate ticket panel for guild ${payload.guildId} because the target channel is unknown.`
             );
             return;
         }
-
-        this._logger.inf(
-            `Recreating TEST ticket panel for guild ${payload.guildId} in channel ${channelId}...`
-        );
 
         try {
             const channel = await this._client.channels.fetch(channelId);
@@ -56,34 +52,26 @@ export class TicketPanelService {
                 return;
             }
 
-            const embed = this._embedFactory.createInfoEmbed({
-                title: "Тестовая панель тикетов",
-                description:
-                    "Эта панель была успешно создана или восстановлена системой.\n\n" +
-                    `**Guild ID:** ${payload.guildId}\n` +
-                    `**Channel ID:** ${channel.id}`,
-            });
+            const embed = createTicketPanelEmbed(this._embedFactory);
+            const components = createTicketPanelComponents();
 
             const newMessage = await channel.send({
                 embeds: [embed],
-                components: [], // В реальной системе здесь будут кнопки
+                components: [components],
             });
 
             await this._configService.guilds.setPinnedMessage(
                 payload.guildId,
                 "ticketCreatePanel",
-                {
-                    messageId: newMessage.id,
-                    channelId: channel.id,
-                }
+                { messageId: newMessage.id, channelId: channel.id }
             );
 
             this._logger.inf(
-                `TEST Ticket panel successfully recreated for guild ${payload.guildId} in channel ${channel.id}.`
+                `Ticket panel successfully recreated for guild ${payload.guildId} in channel ${channel.id}.`
             );
         } catch (error) {
             this._logger.err(
-                `Failed to recreate TEST ticket panel for guild ${payload.guildId}:`,
+                `Failed to recreate ticket panel for guild ${payload.guildId}:`,
                 error.stack
             );
         }
